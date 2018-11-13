@@ -1,9 +1,12 @@
-#include <iostream>
+#include <stdio.h>
 
-using namespace std;
-
+#define MAX 20
 int main()
 {
-  cout << "hello world" << endl;
+  //假的
+  //printf("MAX:%d\n", MAX);
+  //printf("dhkjashdshkdjas\n");
+  int a = 2;
+  a++;
   return 0;
 }

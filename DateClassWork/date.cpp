@@ -246,13 +246,3 @@ int Date::operator- (const Date& d)
 
   return n * flag;
 }
-
-
-
-
-
-
-
-
-
-
