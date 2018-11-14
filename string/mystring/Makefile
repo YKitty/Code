@@ -1,5 +1,5 @@
-main:mystring.cpp mystring.h main.cpp 
-	g++ -std=c++11 -o $@ $^
+main:mystring.cpp  main.cpp 
+	g++ -g -std=c++11 -o $@ $^
 
 .PHONY:clean
 clean:

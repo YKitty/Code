@@ -16,6 +16,7 @@ int main()
   Date olympicDate(2008, 8, 8);
   Date today(2018, 10, 27);
   cout << today - olympicDate << endl;
+  cout << today;
   return 0;
 }
 

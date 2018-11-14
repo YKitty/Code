@@ -1,5 +1,21 @@
 #include "date.h"
 
+ostream& operator<< (ostream& _cout, const Date& d)
+{
+  _cout << d._year << "-" << d._month << "-" << d._day << '\n';
+
+  return _cout;
+}
+
+istream& operator>> (istream& _cin, const Date& d)
+{
+  _cin >> d._year;
+  _cin >> d._month;
+  _cin >> d._day;
+
+  return _cin;
+}
+
 void Date::Print()
 {
   cout << _year << "--" << _month << "--" << _day << endl;

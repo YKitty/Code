@@ -9,8 +9,10 @@ namespace MyString
 {
   class mystring 
   {
+  //友元函数
+  //对于这里的const修饰的是mystring对象的引用，只是不让改变引用所以，对于输入加上也没有事
   friend std::ostream& operator<<(std::ostream& _cout, const mystring& str);
-  friend std::istream& operator>>(std::istream& _cin, mystring& str);
+  friend std::istream& operator>>(std::istream& _cin, const mystring& str);
 
   public:
     //给空字符串是为了，对于一个未初始化的对象，它的size(大小)应该是0，而不应该不存在
@@ -64,6 +66,20 @@ namespace MyString
       return *this;
     }
 
+    char& operator[](size_t pos)
+    {
+      assert(pos < _size);
+
+      return _str[pos];//调用std的[]
+    }
+
+    const char& operator[](size_t pos) const 
+    {
+      assert(pos < _size);
+
+      return _str[pos];
+    }
+
     void swap(mystring& str1, mystring& str2)
     {
       std::swap(str1._str, str2._str);
@@ -97,26 +113,107 @@ namespace MyString
     {
       return _capacity;
     }
+    
+    //函数接口的声明
+    //调整字符串的大小
+    void resize(size_t n);
+    void resize(size_t n, char c);
 
-  private:
+    //调整字符串的容量
+    void reserve(size_t n = 0);
+    
+    //返回当前的字符串的容量
+    size_t capacity() const;
+
+    //清空字符串，将字符串变为一个空串
+    void clear();
+    
+    //判断字符串是否为空
+    bool empty() const;
+
+    //追加operator+=
+    mystring& operator+=(const mystring& str);
+    mystring& operator+=(const char*  str);
+    mystring& operator+=(const char c);
+
+    //追加append
+    mystring& append(const mystring& str);
+    
+    //尾部插入一个字符push_back
+    void push_back(const char c);
+
+    //插入字符串insert
+    mystring& insert(size_t pos, const mystring& str);
+
+    //删除字符串erase
+    mystring& erase(size_t pos = 0, size_t len = npos);
+    
+    //迭代器
+    typedef char* iterator;
+    typedef const char* const_iterator;
+    typedef char* reverse_iterator;
+    typedef const char* const_reverse_iterator;
+
+    iterator begin()
+    {
+      return _str;
+    }
+
+    const_iterator begin() const 
+    {
+      return _str;
+    }
+
+    iterator end()
+    {
+      return _str + size();
+    }
+
+    const_iterator end() const 
+    {
+      return _str + _size;
+    }
+
+    reverse_iterator rbegin()
+    {
+      return _str + _size - 1;
+    }
+
+    const_reverse_iterator rbegin() const
+    {
+      return _str + _size - 1;
+    }
+
+    reverse_iterator rend()
+    {
+      return _str - 1;
+    }
+
+    const_reverse_iterator rend() const 
+    {
+      return _str - 1;
+    }
+    
+    //++it,前置++
+    reverse_iterator& operator++();
+    //it++,后置++
+    reverse_iterator operator++(int);
+  
+    //获取npos的值
+    size_t Getnpos();
+    
+
+private:
     char* _str;//字符串数组
     size_t _size;//大小
     size_t _capacity;//容量
+    static const size_t npos;
   };
+
+
+std::ostream& operator<<(std::ostream& _cout, const mystring& str);
+std::istream& operator>>(std::istream& _cin, const mystring& str);
   
-  std::ostream& operator<<(std::ostream& _cout, const mystring& str)
-  { 
-    _cout << str._str;
-    
-    return _cout;
-  }
-
-  std::istream& operator>>(std::istream& _cin, mystring& str)
-  {
-    _cin >> str._str;
-
-    return _cin;
-  }
 }
 
 
