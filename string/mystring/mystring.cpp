@@ -179,7 +179,7 @@ MyString::mystring& MyString::mystring::insert(size_t pos, const MyString::mystr
   //移动字符串，开辟空间
   for (int i = _size; i >= (int)pos; i--)
   {
-    _str[i + 1] = _str[i];
+    _str[i + str._size] = _str[i];
   }
 
   //将插入字符串插入进去
@@ -188,6 +188,50 @@ MyString::mystring& MyString::mystring::insert(size_t pos, const MyString::mystr
     _str[pos++] = str[i];
   }
   _size = _size + str._size;
+
+  return *this;
+}
+
+MyString::mystring& MyString::mystring::insert(size_t pos, const char* str) 
+{
+  assert (pos < _size);
+  if (_capacity < _size + strlen(str))
+  {
+    reserve(_size + strlen(str));
+  }
+
+  //移动字符串，开辟空间
+  for (int i = _size; i >= (int)pos; i--)
+  {
+    _str[i + strlen(str)] = _str[i];
+  }
+
+  //将插入字符串插入进去
+  for (size_t i = 0; i < strlen(str); i++)
+  {
+    _str[pos++] = str[i];
+  }
+  _size = _size + strlen(str);
+
+  return *this;
+}
+
+MyString::mystring& MyString::mystring::insert(size_t pos, const char c)
+{
+  assert (pos < _size);
+  if (_capacity < _size + 1) 
+  {
+    reserve(_size + 1);
+  }
+
+  //移动字符串，开辟空间
+  for (int i = _size; i >= (int)pos; i--)
+  {
+    _str[i + 1] = _str[i];
+  }
+
+  //将插入字符
+  _str[_size++] = c;
 
   return *this;
 }
@@ -211,6 +255,124 @@ MyString::mystring& MyString::mystring::erase(size_t pos, size_t len)
 
   return *this;
 
+}
+
+//替换字符串的部分值replace
+MyString::mystring& MyString::mystring::replace(size_t pos, size_t len, MyString::mystring& str)
+{
+  this->erase(pos, len);
+  this->insert(pos, str);
+
+  return *this;
+}
+
+//从前往后查找字符串find
+size_t MyString::mystring::find(const MyString::mystring& str, size_t pos) const
+{
+  char* _begin = _str + pos;
+  char* strbegin = str._str;
+  int index = pos;
+  while (*_begin)
+  {
+    char* strstart = strbegin;
+    char* _start = _begin;
+    while (*_start == *strstart)
+    {
+      _start++;
+      strstart++;
+    }
+    if (*strstart == '\0')
+    {
+      return index;
+    }
+    
+    _begin++;
+    index++;
+  }
+
+  //当_str为空的时候或者没有找到，直接返回npos
+  return npos;
+}
+
+size_t MyString::mystring::find(const char* str, size_t pos) const 
+{
+  char* _begin = _str + pos;
+  char* strbegin = (char*)str;
+  int index = pos;
+  while (*_begin)
+  {
+    char* strstart = strbegin;
+    char* _start = _begin;
+    while (*_start == *strstart)
+    {
+      _start++;
+      strstart++;
+    }
+    if (*strstart == '\0')
+    {
+      return index;
+    }
+    
+    _begin++;
+    index++;
+  }
+
+  //当_str为空的时候或者没有找到，直接返回npos
+  return npos;
+}
+
+size_t MyString::mystring::find(const char c, size_t pos) const 
+{
+  for (size_t i = pos; i < _size; i++)
+  {
+    if (_str[i] == c)
+    {
+      return i;
+    }
+  }
+
+  //当_str为空的时候或者没有找到，直接返回npos
+  return npos;
+}
+
+//从后往前查找字符串rfind
+size_t MyString::mystring::rfind(const MyString::mystring& str, size_t pos) const 
+{ 
+  if (pos == npos)
+  {
+    pos = _size - 1;
+  }
+
+  char* _end = _str + pos;
+  char* strend = str._str + str._size - 1;
+  int flag = str._size;
+  int index = pos;
+  int ret = 0; 
+
+  while (*_end)
+  {
+    ret = index;
+    char* strlast = strend;
+    char* _last = _end;
+    while (*_last == *strlast)
+    {
+      _last--;
+      strlast--;
+      flag--;
+      ret--;
+    }
+    if (flag == 0)
+    {
+      //最后需要返回ret+1，因为将两个都相等判断完了之后，还要再进入循环比较一次
+      return ret + 1;
+    }
+    
+    _end--;
+    index--;
+  }
+
+  //当_str为空的时候，直接返回0
+  return npos;
 }
 
 ////++str,前置++

@@ -56,12 +56,12 @@ namespace MyString
     {
       //构造一个临时对象
       mystring tmp(str._str);
-      swap(*this, tmp);
+      this->swap(tmp);
     }
 
     mystring& operator=(mystring str)
     {
-      swap(*this, str);
+      this->swap(str);
 
       return *this;
     }
@@ -80,11 +80,11 @@ namespace MyString
       return _str[pos];
     }
 
-    void swap(mystring& str1, mystring& str2)
+    void swap(mystring& str2)
     {
-      std::swap(str1._str, str2._str);
-      std::swap(str1._size, str2._size);
-      std::swap(str1._capacity, str2._capacity);
+      std::swap(_str, str2._str);
+      std::swap(_size, str2._size);
+      std::swap(_capacity, str2._capacity);
     }
 
     const char* c_str()
@@ -144,10 +144,23 @@ namespace MyString
 
     //插入字符串insert
     mystring& insert(size_t pos, const mystring& str);
+    mystring& insert(size_t pos, const char* str);
+    mystring& insert(size_t pos, const char c);
 
     //删除字符串erase
     mystring& erase(size_t pos = 0, size_t len = npos);
     
+    //替换字符串的部分值replace
+    mystring& replace(size_t pos, size_t len, mystring& str);
+
+    //从前往后查找字符串find
+    size_t find(const mystring& str, size_t pos = 0) const;
+    size_t find(const char* str, size_t pos = 0) const;
+    size_t find(const char c, size_t pos = 0) const;
+
+    //从后往前查找字符串rfind
+    size_t rfind(const mystring& str, size_t pos = npos) const;
+
     //迭代器
     typedef char* iterator;
     typedef const char* const_iterator;

@@ -4,29 +4,40 @@ int main()
 {
   MyString::mystring str = "hello world";//隐式转换
   MyString::mystring str1 = "!";//隐式转换
+  MyString::mystring str2 = "world";
 
-  //测试operator+=
-  str += str1;
-  std::cout << str << '\n';//hello world!
-  str += "i love yo";
-  str += 'u';
-  std::cout << str << '\n';//hello world!i love you
+  //测试replace
+  str.replace(0, 1, str1);
+  std::cout << str << '\n';//!ello world
 
-  //测试append
-  str.append(str1);
-  std::cout << str << '\n';//hello world!i love you!
+  //测试find
+  std::cout << str.find(str2, 3) <<'\n';//7
 
-  //测试push_back
-  str.push_back('X');
-  std::cout << str << '\n';//hello world!i love you!X
+  //测试rfind
+  std::cout << str.rfind(str2) << '\n';//7
 
-  //测试insert
-  str.insert(0, str1);
-  std::cout << str << '\n';//!hello world!i love you!X
+  ////测试operator+=
+  //str += str1;
+  //std::cout << str << '\n';//hello world!
+  //str += "i love yo";
+  //str += 'u';
+  //std::cout << str << '\n';//hello world!i love you
 
-  //测试erase
-  str.erase();
-  std::cout << str << '\n';//
+  ////测试append
+  //str.append(str1);
+  //std::cout << str << '\n';//hello world!i love you!
+
+  ////测试push_back
+  //str.push_back('X');
+  //std::cout << str << '\n';//hello world!i love you!X
+
+  ////测试insert
+  //str.insert(0, str1);
+  //std::cout << str << '\n';//!hello world!i love you!X
+
+  ////测试erase
+  //str.erase();
+  //std::cout << str << '\n';//
 
 
   ////测试capacity和clear
