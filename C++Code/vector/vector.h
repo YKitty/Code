@@ -41,6 +41,45 @@ namespace Myvector
       , _endofstorage(nullptr)
     {}
     
+    myvector (int n, T d)
+      : _start(nullptr)
+      , _finish(nullptr)
+      , _endofstorage(nullptr)
+    {
+      while (n--)
+      {
+        push_back(d);
+      }
+    }
+    
+//    template <class InputIterator>
+//    myvector (InputIterator left, InputIterator right)
+//      : _start(nullptr)
+//      , _finish(nullptr)
+//      , _endofstorage(nullptr)
+//    {
+//      right--;
+//      while (right >= left)
+//      {
+//        insert(begin(), right[0]);
+//        right--;
+//      }
+//    }
+//
+    template <class InputIterato>
+    myvector (InputIterato left, InputIterato right)
+      : _start(nullptr)
+      , _finish(nullptr)
+      , _endofstorage(nullptr)
+    {
+      right--;
+      while (right >= left)
+      {
+        insert(begin(), right[0]);
+        right--;
+      }
+    }
+
     ~myvector ()
     {
       if (_start)
@@ -49,6 +88,7 @@ namespace Myvector
         _start = _finish = _endofstorage = nullptr;
       }
     }
+
 
     myvector (const myvector<T>& mv)
       : _start(nullptr)
@@ -108,7 +148,7 @@ namespace Myvector
       return _finish - _start;
     }
 
-    //T()表示直接对于这个T类型的东西赋值为0
+    //T()表示直接对于这个T类型的数据进行初始化，一般也就是赋值为0
     void resize(size_t n, const T& d = T())
     {
       size_t begin = size();

@@ -1,5 +1,80 @@
 #include "vector.h"
 
+void Test5()
+{
+  Myvector::myvector<std::string> v;
+  v.push_back("aa");
+  v.push_back("bb");
+  v.push_back("cc");
+  v.push_back("dd");
+
+  for (auto e : v)
+  {
+    std::cout << e << " ";
+  }
+  std::cout << '\n';
+
+  Myvector::myvector<std::string> v1(v.begin(), v.end());
+
+  for (auto e : v1)
+  {
+    std::cout << e << " ";
+  }
+  std::cout << '\n';
+}
+
+void Test4()
+{
+  //测试自己写的有没有迭代器失效的情况
+  Myvector::myvector<int> v;
+  v.push_back(1);
+  v.push_back(2);
+  v.push_back(3);
+  v.push_back(4);
+  
+  Myvector::myvector<int>::iterator it = v.begin();
+  while (it != v.end())
+  {
+    if (*it % 2 == 0)
+    {
+      v.erase(it);
+    }
+    else 
+    {
+      it++;
+    }
+  }
+
+  for (const auto& e : v)
+  {
+    std::cout << e << " ";
+  }
+  std::cout << '\n';
+
+  //Myvector::myvector<int>::iterator it = v.begin() + 1;//2
+  //v.erase(it);
+  //std::cout << *it << '\n';
+}
+
+void Test3()
+{
+  //测试构造函数
+  Myvector::myvector<int> v((int)3, 10);
+  for (auto e : v)
+  {
+    std::cout << e << " ";
+  }
+  std::cout << '\n';
+
+  Myvector::myvector<int> v1(v.begin(), v.end());
+  for (auto e : v1)
+  {
+    std::cout << e << " ";
+  }
+  std::cout << '\n';
+
+}
+
 void Test2()
 {
   Myvector::myvector<int> v;
@@ -84,7 +159,10 @@ void Test1()
 int main()
 {
   //Test1();
-  Test2();
+  //Test2();
+  //Test3();
+  //Test4();
+  Test5();
   return 0;
 }
 
