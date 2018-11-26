@@ -40,20 +40,31 @@ namespace Mylist
     {
     }
 
+    ListIterator (const Node& d)
+      : _node(d._node)
+    {
+    }
+
     T operator* ()
     {
       return _node->_data;
     }
 
-    Self& operator->()
+    //后置++
+    //拷贝一份当前迭代器，然后返回拷贝好的迭代器
+    Self operator++ (int)
     {
-      return _node->_next;
+      Self temp(*this);
+      _node = _node->_next;
+
+      return temp;
     }
 
     //前置++
     Self& operator++ ()
     {
       _node = _node->_next;
+
       return *this;
     }
 
@@ -104,7 +115,8 @@ namespace Mylist
       while (First != end)
       {
         push_back(*First);
-        ++First;
+        //++First;
+        First++;
       }
     }
 
@@ -126,28 +138,60 @@ namespace Mylist
       _head = nullptr;
     }
 
-    mylist (const mylist<T>& ml)
+    //mylist (const mylist<T>& ml)
+    //  : _head(new Node)
+    //{
+    //  _head->_next = _head;
+    //  _head->_prev = _head;
+    //  Node* ret = ml._head->_next;
+    //  while (ret != ml._head)
+    //  {
+    //    push_back(ret->_data);
+    //    ret = ret->_next;
+    //  }
+    //}
+
+    //现代写法
+    mylist (mylist<T>& ml)
       : _head(new Node)
     {
       _head->_next = _head;
       _head->_prev = _head;
-      Node* ret = ml._head->_next;
-      while (ret != ml._head)
-      {
-        push_back(ret->_data);
-        ret = ret->_next;
-      }
+      mylist<T> temp(ml.begin(), ml.end());
+      swap(temp);
     }
 
-    mylist& operator=(const mylist<T>& ml)
+    //mylist<T>& operator= (const mylist<T>& ml)
+    //{
+    //  Node* ret = ml._head->_next;
+    //  while (ret != ml._head)
+    //  {
+    //    push_back(ret->_data);
+    //    ret = ret->_next;
+    //  }
+    //}
+    
+    //现代写法
+    //直接拷贝不管是不是自己给自己拷贝
+    //mylist<T>& operator= (mylist<T> ml)
+    //{
+    //  swap(ml);
+
+    //  return *this;
+    //}
+    
+    //拷贝的时候判断一下是不是自己给自己拷贝
+    mylist<T>& operator= (mylist<T>& ml)
     {
-      Node* ret = ml._head->_next;
-      while (ret != ml._head)
+      if (this != &ml)
       {
-        push_back(ret->_data);
-        ret = ret->_next;
+        mylist<T> temp(ml);//拷贝构造
+        swap(temp);
       }
+
+      return *this;
     }
+    
 
     bool empty()
     {
@@ -252,14 +296,16 @@ namespace Mylist
       _head->_prev = _head;
     }
 
+    void swap(mylist<int>& ml)
+    {
+      //对于系统自己实现的swap,只是浅拷贝，对于交换指针，已经够了
+      std::swap(_head, ml._head);
+    }
+
   private:
     Node* _head;
   };
 
 }
-
-
-
-
 
 #endif //__LIST_H__

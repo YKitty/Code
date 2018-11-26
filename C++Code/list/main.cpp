@@ -1,5 +1,30 @@
 #include "list.h"
 
+void Test4()
+{
+  //测试迭代器的前置++，与后置++
+  //以及迭代器自我重载的一些功能
+  Mylist::mylist<int> ml;
+  ml.push_back(1);
+  ml.push_back(2);
+  ml.push_back(3);
+  ml.push_back(4);
+
+  Mylist::ListIterator<int> it = ml.begin();
+  while (it != ml.end())
+  {
+    //测试*
+    //std::cout << *it << std::endl;
+    
+    //测试后置++
+    //std::cout << *it++ << std::endl;
+    
+    //测试前置++
+    std::cout << *++it << std::endl;
+  }
+
+}
+
 void Test3()
 {
   //测试erase,insert
@@ -131,7 +156,8 @@ int main()
 {
   //Test1();
   //Test2();
-  Test3();
+  //Test3();
+  Test4();
   return 0;
 }
 
