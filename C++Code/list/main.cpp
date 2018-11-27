@@ -1,4 +1,4 @@
-#include "list.h"
+#include "list.hpp"
 
 void Test4()
 {
@@ -10,7 +10,7 @@ void Test4()
   ml.push_back(3);
   ml.push_back(4);
 
-  Mylist::ListIterator<int> it = ml.begin();
+  Mylist::ListIterator<int, int&, int*> it = ml.begin();
   while (it != ml.end())
   {
     //测试*
