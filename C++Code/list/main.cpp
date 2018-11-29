@@ -1,5 +1,35 @@
 #include "list.hpp"
 
+
+void Test6()
+{
+  const Mylist::mylist<int> ml;
+}
+void Test5()
+{
+  //测试反向迭代器
+  Mylist::mylist<int> ml;
+  ml.push_back(1);
+  ml.push_back(2);
+  ml.push_back(3);
+  ml.push_back(4);
+
+  Mylist::ReverseIterator<int, int&, int*, Mylist::ListIterator<int, int&, int*>> rit = ml.rbegin();
+  while (rit != ml.rend())
+  {
+    std::cout << *rit << std::endl;
+    rit++;
+  }
+
+  Mylist::ReverseIterator<int, const int&, const int*, Mylist::ListIterator<int, const int&, const int*>> crit = ml.crbegin();
+  while (crit != ml.crend())
+  {
+    std::cout << *crit << std::endl;
+    crit++;
+  }
+
+}
+
 void Test4()
 {
   //测试迭代器的前置++，与后置++
@@ -157,7 +187,9 @@ int main()
   //Test1();
   //Test2();
   //Test3();
-  Test4();
+  //Test4();
+  //Test5();
+  Test6();
   return 0;
 }
 

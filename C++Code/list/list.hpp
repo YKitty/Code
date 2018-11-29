@@ -26,19 +26,21 @@ namespace Mylist
     ListNode<T>* _prev;
 
   };
-  
+ 
+  ////////////////////////////////////////////////////////////////////////////////////////////
+  //正向迭代器
   //迭代器本质上还是一个指针，只不过对于该指针的操作不一样了
   template <class T, class Ref, class Ptr>
   struct ListIterator 
   {
     typedef ListNode<T> Node;
     typedef ListIterator<T, Ref, Ptr> Self;
-    ListIterator (Node* node)
+    ListIterator (Node* node = nullptr)
       : _node(node)
     {
     }
 
-    ListIterator (const Node& d)
+    ListIterator (const Self& d)
       : _node(d._node)
     {
     }
@@ -99,6 +101,79 @@ namespace Mylist
     Node* _node;
   };
 
+  //反向迭代器
+  //
+  template <class T, class Ref, class Ptr, class iterator>
+  struct ReverseIterator 
+  {
+    typedef ListNode<T> Node;
+    typedef ReverseIterator<T, Ref, Ptr, iterator> Self;
+    ReverseIterator (const iterator& it)
+      : _it(it)
+    {
+    }
+
+    ReverseIterator (const Self& it)
+      : _it(it._it)
+    {
+    }
+
+    Ref operator* ()
+    {
+      return _it._node->_data;
+    }
+
+    Ptr operator-> ()
+    {
+      return &(operator*());
+    }
+
+    //后置++
+    //拷贝一份当前迭代器，然后返回拷贝好的迭代器
+    Self operator++ (int)
+    {
+      //使用默认的拷贝构造，按字节拷贝
+      Self temp(*this);
+      _it--;
+
+      return temp;
+    }
+
+    //前置++
+    Self& operator++ ()
+    {
+      _it--;
+
+      return *this;
+    }
+
+    //后置--
+    //拷贝一份当前迭代器，然后返回拷贝好的迭代器
+    Self operator-- (int)
+    {
+      Self temp(*this);
+      _it++;
+
+      return temp;
+    }
+
+    //前置--
+    Self& operator-- ()
+    {
+      _it++;
+
+      return *this;
+    }
+
+    bool operator!= (const Self& it)
+    {
+      //两个不相等返回true，相等返回false
+      return _it != it._it;
+    }
+
+
+    iterator _it;
+  };
 
   template <class T>
   class mylist 
@@ -108,7 +183,8 @@ namespace Mylist
 
     typedef ListIterator<T, T&, T*> iterator;
     typedef ListIterator<T, const T&, const T*> const_iterator;
-    
+    typedef ReverseIterator<T, T&, T*, iterator> reverse_iterator;
+    typedef ReverseIterator<T, const T&, const T*, const_iterator> const_reverse_iterator;
 
     /////////////////////////////////////////////////////////////////////////////////////////////
     //迭代器
@@ -133,6 +209,27 @@ namespace Mylist
       return const_iterator(_head);
     }
 
+    reverse_iterator rbegin()
+    {
+      //调用了拷贝构造函数
+      return reverse_iterator(--end());
+    }
+
+    reverse_iterator rend()
+    {
+      return iterator(--begin());
+    }
+
+    const_reverse_iterator crbegin() const 
+    {
+      //调用了拷贝构造函数
+      return const_reverse_iterator(--cend());
+    }
+
+    const_reverse_iterator crend() const 
+    {
+      return const_reverse_iterator(--cbegin());
+    }
     ///////////////////////////////////////////////////////////////////////////////////////////
     //构造函数
     //开辟头结点并且在Node中默认初始化
