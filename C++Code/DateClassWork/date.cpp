@@ -7,7 +7,7 @@ ostream& operator<< (ostream& _cout, const Date& d)
   return _cout;
 }
 
-istream& operator>> (istream& _cin, const Date& d)
+istream& operator>> (istream& _cin, Date& d)
 {
   _cin >> d._year;
   _cin >> d._month;

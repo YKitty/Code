@@ -8,7 +8,7 @@ using namespace std;
 class Date 
 {
 friend  ostream& operator<< (ostream& _cout, const Date& d); 
-friend  istream& operator>> (istream& _cin, const Date& d);
+friend  istream& operator>> (istream& _cin, Date& d);
 public:
   Date (int year = 1998, int month = 11, int day = 10);//构造函数
   Date (const Date& d);//拷贝构造函数
