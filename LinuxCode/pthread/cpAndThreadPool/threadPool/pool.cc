@@ -18,7 +18,7 @@ int main()
     Task t(x, x - 1, add);
     tp.addTask(t);
     x++;
-    //sleep(1);
+    sleep(1);
   }
   return 0;
 }
