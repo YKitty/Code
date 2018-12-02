@@ -34,7 +34,9 @@ void mydaemon()
 
 int main()
 {
-  mydaemon();
+  //mydaemon();
+  //直接调用系统操作函数来创建一个守护进程
+  daemon(1, 1);
   while (1)
   {
     sleep(1);
