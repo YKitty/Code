@@ -3,7 +3,7 @@
 
 int main()
 {
-  yk::priority_queue<int> pq;
+  yk::priority_queue<int, std::deque<int>, less<int> > pq;
   pq.push(1);
   pq.push(2);
   pq.push(3);

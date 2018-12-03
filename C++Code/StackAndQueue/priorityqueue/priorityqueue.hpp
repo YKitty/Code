@@ -17,6 +17,17 @@ public:
   }
 };
 
+template <class T>
+class less
+{
+public:
+  //重载()
+  bool operator() (const T& d1, const T& d2)
+  {
+    return d1 < d2;
+  }
+};
+
 namespace yk
 {
   template <class T, class container = std::deque<T>, class compare = greater<T> >
@@ -27,9 +38,11 @@ namespace yk
     {
       size_t parent = (child - 1) >> 1;
 
+      compare com;
       while (child > 0)
       {
-        if (_con[parent] < _con[child])
+        if (com(_con[child], _con[parent]))
+        //if (_con[parent] < _con[child])
         {
           std::swap(_con[parent], _con[child]);
           child = parent;
@@ -46,15 +59,19 @@ namespace yk
     {
       size_t child = parent * 2 + 1; 
 
+      compare com;
       while (child < _con.size())
       {
         //寻找左右孩子中大的一个
-        if ((child + 1 < _con.size() && (_con[child + 1] > _con[child])))
+        if ((child + 1 < _con.size()) && 
+              (com(_con[child +1], _con[child])))
+              //(_con[child + 1] > _con[child])))
           {
             ++child; 
           }
         
-        if (_con[parent] < _con[child])
+        if (com(_con[child], _con[parent]))
+        //if (_con[parent] < _con[child])
         {
           std::swap(_con[parent], _con[child]);
           parent = child;
