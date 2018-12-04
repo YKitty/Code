@@ -147,6 +147,7 @@ void Test1()
   std::cout << '\n';
 
   Myvector::myvector<int> v2;
+  v2.push_back(3);
   v2 = v1;
   Myvector::myvector<int>::iterator e = v2.begin();
   for (; e != v2.end(); e++)
@@ -158,11 +159,11 @@ void Test1()
 
 int main()
 {
-  //Test1();
+  Test1();
   //Test2();
   //Test3();
   //Test4();
-  Test5();
+  //Test5();
   return 0;
 }
 

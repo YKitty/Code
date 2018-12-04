@@ -114,6 +114,8 @@ namespace Myvector
       {
         reserve(len);
       }
+      //必须要将_finish进行重置，否则有可能导致_finish越界
+      _finish = _start;
       //这只是浅拷贝
       //memcpy(tmp, mv._start, sizeof(T) * len);
       for (size_t i = 0; i < len; i++)
@@ -148,7 +150,7 @@ namespace Myvector
       return _finish - _start;
     }
 
-    //T()表示直接对于这个T类型的数据进行初始化，一般也就是赋值为0
+    //T()表示直接对于这个T类型的数据的匿名对象并且调用构造函数进行初始化，一般也就是赋值为0
     void resize(size_t n, const T& d = T())
     {
       size_t begin = size();
@@ -198,6 +200,7 @@ namespace Myvector
 
       if (_finish == _endofstorage)
       {
+        //考虑到了第一次直接就插入的话，导致错误
         size_t newcapacity = capacity() == 0 ? 2 : capacity() * 2;
         reserve(newcapacity);
         //如果增容的话，pos的位置发生改变
