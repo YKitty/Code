@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <strings.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 
 class Sock 
 {
@@ -28,6 +29,11 @@ public:
   {}
 
   ~Sock()
+  {
+    close(sock);
+  }
+
+  void Close()
   {
     close(sock);
   }
@@ -111,6 +117,18 @@ public:
 #include <functional>
 typedef std::function<void (const std::string&, std::string*)> Handler;
 
+
+struct ThreadArg 
+{
+  Sock new_sock;
+  Handler handler;
+
+  ThreadArg()
+  {
+    handler = NULL;
+  }
+};
+
 class TcpServer 
 {
 private:
@@ -128,29 +146,59 @@ public:
     sock.Listen();
   }
 
+
+  static void ProcessConnect(ThreadArg* arg)
+  {
+    for ( ; ; )
+    {
+      std::string req;
+      //一直在接收请求，如果没有接收到就跳出循环
+      if (!arg->new_sock.Recv(req))
+      {
+        std::cerr << "ProcessConnect Recv error!" << std::endl;
+        break;
+      }
+      std::cout << "client# " << req << std::endl;
+      std::string resp;
+      arg->handler(req, &resp);
+      //req += "server";
+      arg->new_sock.Send(resp);
+      std::cout << "server echo success!" << std::endl;
+    }
+  }
+
+  //为了不将this指针传入进来，所以必须是static的
+  static void* ThreadConnect(void* arg)
+  {
+    pthread_detach(pthread_self());
+    ThreadArg* arg_ = reinterpret_cast<ThreadArg*>(arg);
+    
+    ProcessConnect(arg_);
+    std::cout << "ThreadConnect " << std::endl;
+    //一定要释放内存，防止内存泄露
+    //并且当这个线程完成通话之后必须要将socket文件描述符关闭，防止浪费资源
+    //其实也可以不释放，因为已经在Sock类的析构函数已经将其进行释放了
+    //arg_->new_sock.Close();
+    delete arg_;
+    return NULL;
+  }
+
   void Start(Handler handler)
   {
     //进行accept
     for ( ; ; )
     {
-      Sock new_sock;
+      //必须要创建一个对象，才能为其分配空间
+      ThreadArg* arg = new ThreadArg();
+      arg->handler = handler;
       //如果没有接受到请求就重新开始循环
-      if (!sock.Accept(&new_sock))
+      if (!sock.Accept(&(arg->new_sock)))
         continue;
       std::cout << "clinet connect successed!" << std::endl;
-
-      for ( ; ; )
-      {
-        std::string req;
-        //一直在接收请求，如果没有接收到就跳出循环
-        new_sock.Recv(req);
-        std::cout << "client# " << req << std::endl;
-        std::string resp;
-        handler(req, &resp);
-        //req += "server";
-        new_sock.Send(resp);
-        std::cout << "server echo success!" << std::endl;
-      }
+      
+      //接受成功要用线程去进行通信
+      pthread_t tid;
+      pthread_create(&tid, NULL, ThreadConnect, (void*)arg);
     }
   }
   

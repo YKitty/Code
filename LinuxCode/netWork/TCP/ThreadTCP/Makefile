@@ -5,7 +5,7 @@ client:TcpClient.cc
 	$(cc) -o $@ $^ -std=c++11
 
 server:TcpServer.cc 
-	$(cc) -o $@ $^ -std=c++11
+	$(cc) -o $@ $^ -std=c++11 -pthread
 
 .PHONY:clean
 clean:
