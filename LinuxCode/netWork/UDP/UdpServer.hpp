@@ -35,7 +35,7 @@ public:
   {
     struct sockaddr_in local_;
     local_.sin_family = AF_INET;
-    local_.sin_port = htons(port);
+    local_.sin_port = htons(port);//将对于端口号本机字节序改为网络字节序
     local_.sin_addr.s_addr = inet_addr(ip.c_str());
     if (bind(sock, (struct sockaddr*)&local_, sizeof(local_)) < 0)
     {

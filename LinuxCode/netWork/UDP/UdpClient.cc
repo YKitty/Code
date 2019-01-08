@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
   bzero(&server, sizeof(server));
 
   server.sin_family = AF_INET;
-  server.sin_port = htons(atoi(argv[2]));
+  server.sin_port = htons(atoi(argv[2]));//将本机字节序转化为网络字节序
   server.sin_addr.s_addr = inet_addr(argv[1]);
 
   char buf[1024];
