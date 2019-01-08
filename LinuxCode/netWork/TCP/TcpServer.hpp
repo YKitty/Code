@@ -145,9 +145,10 @@ public:
         //一直在接收请求，如果没有接收到就跳出循环
         new_sock.Recv(req);
         std::cout << "client# " << req << std::endl;
-        //std::string resp;
-        req += "server";
-        new_sock.Send(req);
+        std::string resp;
+        handler(req, &resp);
+        //req += "server";
+        new_sock.Send(resp);
         std::cout << "server echo success!" << std::endl;
       }
     }
