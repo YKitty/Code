@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   
   TcpServer* sp = new TcpServer(argv[1], atoi(argv[2]));
   sp->InitServer();
-  sp->Start(Translate);
+  sp->Start();
   delete sp;
   return 0;
 }

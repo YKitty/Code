@@ -8,6 +8,8 @@
 #include <netinet/in.h>
 #include <strings.h>
 #include <arpa/inet.h>
+#include "ThreadPool.hpp"
+#include <unordered_map>
 
 class Sock 
 {
@@ -30,6 +32,11 @@ public:
   ~Sock()
   {
     close(sock);
+  }
+
+  int GetSock()
+  {
+    return sock;
   }
 
   void Socket()
@@ -68,17 +75,16 @@ public:
     }
   }
 
-  bool Accept(Sock* new_sock)
+  bool Accept(int* new_sock)
   {
     sockaddr_in addr;
     socklen_t len = sizeof(addr);
-    int newSock = accept(sock, (sockaddr*)&addr, &len);
-    if (newSock < 0)
+    *new_sock = accept(sock, (sockaddr*)&addr, &len);
+    if (*new_sock < 0)
     {
       std::cerr << "accept error!" << std::endl;
       exit(5);
     }
-    new_sock->sock = newSock;
     //new_sock.ip = inet_ntoa(addr.sin_addr);
     //new_sock.port = ntohs(addr.sin_port);
     return true;
@@ -109,7 +115,7 @@ public:
 };
 
 #include <functional>
-typedef std::function<void (const std::string&, std::string*)> Handler;
+//typedef std::function<void (const std::string&, std::string*)> Handler;
 
 class TcpServer 
 {
@@ -127,30 +133,66 @@ public:
     sock.Bind();
     sock.Listen();
   }
+  
+  //service函数必须只能有一个成员变量
+  static void Service(int sock)
+  {
 
-  void Start(Handler handler)
+      std::unordered_map<std::string, std::string> dict;
+      dict.insert(std::make_pair("hello", "你好"));
+      dict.insert(std::make_pair("apple", "苹果"));
+      dict.insert(std::make_pair("world", "世界"));
+      dict.insert(std::make_pair("xust", "西安科技大学"));
+      for ( ; ; )
+      {
+        char buf[1024];
+        int s;
+        std::string req;
+        //一直在接收请求，如果没有接收到就跳出循环
+        if ((s = recv(sock, buf, sizeof(buf), 0)) > 0)
+        {
+          buf[s] = 0;
+          req = buf; 
+          std::cout << "client# " << req << std::endl;
+          std::string resp;
+          resp = dict[req];
+          if (resp.empty())
+          {
+            resp = "null";
+          }
+          //req += "server";
+          send(sock, resp.c_str(), resp.size(), 0);
+          std::cout << "server echo success!" << std::endl;
+        }
+        else if (s == 0)
+        {
+          std::cout << "client quit!" << std::endl;
+        }
+        else 
+        {
+          std::cerr << "recv error!" << std::endl;
+        }
+      }
+      close(sock);
+  }
+
+  void Start()
   {
     //进行accept
     for ( ; ; )
     {
-      Sock new_sock;
+      int new_sock;
       //如果没有接受到请求就重新开始循环
       if (!sock.Accept(&new_sock))
         continue;
       std::cout << "clinet connect successed!" << std::endl;
-
-      for ( ; ; )
-      {
-        std::string req;
-        //一直在接收请求，如果没有接收到就跳出循环
-        new_sock.Recv(req);
-        std::cout << "client# " << req << std::endl;
-        std::string resp;
-        handler(req, &resp);
-        //req += "server";
-        new_sock.Send(resp);
-        std::cout << "server echo success!" << std::endl;
-      }
+      
+      
+      //创建任务并增加到线程池
+      Task* t = new Task(new_sock, TcpServer::Service);
+      Pool* p = new Pool(5);
+      p->InitPool();
+      p->AddTask(*t);
     }
   }
   
