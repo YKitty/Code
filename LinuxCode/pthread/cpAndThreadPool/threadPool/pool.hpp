@@ -74,12 +74,17 @@ public:
     if (_isStop)
     {
       unlock();
+      //lock();
       _poolNums--;
-      pthread_exit((void*)0);
+      //unlock();
       std::cout << "thread: " << pthread_self() << " quit!" << std::endl;
+      pthread_exit((void*)0);
       return;
     }
-    pthread_cond_wait(&_cond, &_lock);
+    else
+    {
+      pthread_cond_wait(&_cond, &_lock);
+    }
   }
 
   void addTask(Task& t)
@@ -88,6 +93,7 @@ public:
     if(_isStop)
     {
       unlock();
+      return;
     }
     _taskQueue.push(t);
     noticeOneThread();
@@ -110,6 +116,7 @@ public:
 
     while (_poolNums > 0)
     {
+      //IdleThread();
       noticeAllThread();
     }
   }
