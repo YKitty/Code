@@ -1,36 +1,59 @@
 #include <iostream>
+#include <vector>
 
-double Division(int x, int y) throw(const char*)
-{
-  if (y == 0)
-  {
-    throw "Division by zero condition!";
-  }
-  return (double)x / (double)y;
-}
-
-void Func()
-{
-  int x;
-  int y;
-  std::cin >> x >> y;
-  std::cout << Division(x, y) << std::endl;
-}
+using namespace std;
 
 int main()
 {
   try 
   {
-    Func();
+    vector<int> v(10, 5);
+    v.reserve(1000000);
+    v.at(10);
   }
-  catch (const char* errmsg)
+  catch (const exception& e)
   {
-    std::cout << errmsg << std::endl;
+    cout << e.what() << endl;;
   }
   catch (...)
   {
-    std::cout << "unkown " << std::endl;
+    cout << "unkown exception!" << endl;
   }
-
   return 0;
 }
+
+
+//double Division(int x, int y) throw(const char*)
+//{
+//  if (y == 0)
+//  {
+//    throw "Division by zero condition!";
+//  }
+//  return (double)x / (double)y;
+//}
+//
+//void Func()
+//{
+//  int x;
+//  int y;
+//  std::cin >> x >> y;
+//  std::cout << Division(x, y) << std::endl;
+//}
+//
+//int main()
+//{
+//  try 
+//  {
+//    Func();
+//  }
+//  catch (const char* errmsg)
+//  {
+//    std::cout << errmsg << std::endl;
+//  }
+//  catch (...)
+//  {
+//    std::cout << "unkown " << std::endl;
+//  }
+//
+//  return 0;
+//}
