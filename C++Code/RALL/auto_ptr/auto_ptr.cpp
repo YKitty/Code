@@ -30,11 +30,13 @@ public:
   AutoPtr(AutoPtr<T>& t)
     : ptr(t.ptr)
   {
+    std::cout << "拷贝构造!" << std::endl;
     t.ptr = NULL;
   }
 
   T& operator=( AutoPtr<T>& t)
   {
+    std::cout << "赋值运算符重载!" << std::endl;
     if (this != &t)
     {
       if (ptr)
@@ -64,7 +66,7 @@ int main()
 {
   AutoPtr<Date> d(new Date);
   d->year = 20;
-  AutoPtr<Date> d1(d);
+  AutoPtr<Date> d1 = d;
   //管理权转移
   if (d.operator->() == NULL)
   {
