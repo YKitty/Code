@@ -200,7 +200,7 @@ public:
       char ouput_buf[1024];
       memset(ouput_buf, 0, sizeof(ouput_buf));
       const char* hello = "<h1>hello world</h1>";
-      sprintf(ouput_buf, "HTTP/1.0 200 OK\nContent-Length:%lu\n\n%s", strlen(hello), hello);
+      sprintf(ouput_buf, "HTTP/1.0 302 REDIRECT\nContent-Length:%lu\nLocation:https://www.taobao.com\n\n%s", strlen(hello), hello);
       send(new_sock, ouput_buf, sizeof(ouput_buf), 0);
     }
   }
