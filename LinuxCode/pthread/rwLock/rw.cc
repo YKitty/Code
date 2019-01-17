@@ -22,8 +22,7 @@ void* write(void* arg)
   while(1)
   {
     pthread_rwlock_wrlock(&rwlock);
-    std::cout << "thread: " << pthread_self() <<  "write:" << book << std::endl;
-    book++;
+    std::cout << "thread: " << pthread_self() <<  "write:" << ++book << std::endl;
     pthread_rwlock_unlock(&rwlock);
     sleep(1);
   }
