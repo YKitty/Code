@@ -1,0 +1,44 @@
+CURR_PATH=$(shell pwd)
+SERVER=$(CURR_PATH)/server
+CLIENT=$(CURR_PATH)/client
+DATA_POOL=$(CURR_PATH)/data_pool
+
+LD_FLAGS=-lpthread
+
+INCLUDE=-I$(DATA_POOL)
+
+cc=g++
+
+ser_bin=chatServer
+cli_bin=chatClient
+
+ser_obj=$(shell ls $(SERVER)/*.cpp $(DATA_POOL)/*.cpp |\
+				sed -e 's/\/.*\///' -e 's/\.cpp/\.o/')
+cli_obj=$(shell ls $(CLIENT)/*.cpp |\
+				sed -e 's/\/.*\///' -e 's/\.cpp/\.o/')
+
+
+
+#去掉sed -e 's/\/.*\///' -e 's/.cc/.o'(正则表达式) nodir内置函数也可以去掉路径
+
+.PHONY:all
+all:$(ser_bin) $(cli_bin)
+$(ser_bin):$(ser_obj)
+	$(cc) -o $@ $^ $(LD_FLAGS)
+$(cli_bin):$(cli_obj)
+	$(cc) -o $@ $^ $(LD_FLAGS)
+%.o:$(SERVER)/%.cpp 
+	$(cc) -c $< $(INCLUDE)
+%.o:$(CLIENT)/%.cpp 
+	$(cc) -c $<
+%.o:$(DATA_POOL)/%.cpp 
+	$(cc) -c $<
+
+.PHONY:
+clean:
+	rm -rf *.o $(ser_bin) $(cli_bin) 
+
+.PHONY:debug
+debug:
+	@echo $(ser_obj)
+	@echo $(cli_obj)
