@@ -142,6 +142,7 @@ void *run_output_flist(void* arg)
     {
       wp->put_string_to_window(wp->get_flist(), j + 1, 2, friends[j]);
     }
+    wrefresh(wp->get_flist());
     
   }
 }
