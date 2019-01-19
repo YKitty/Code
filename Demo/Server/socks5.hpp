@@ -1,5 +1,5 @@
-#define __SOCKS5__
-#ifdef __SOCKS5__ 
+#define __SOCKS5_H__
+#ifdef __SOCKS5_H__ 
 
 #include "epoll.hpp"
 
@@ -19,4 +19,4 @@ protected:
 
 
 
-#endif //__SOCKS5__ 
+#endif //__SOCKS5_H__ 
