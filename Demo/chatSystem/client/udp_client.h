@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "window.h"
 
 #define SIZE 1024//接收数据的最大长度
 

@@ -2,20 +2,22 @@ CURR_PATH=$(shell pwd)
 SERVER=$(CURR_PATH)/server
 CLIENT=$(CURR_PATH)/client
 DATA_POOL=$(CURR_PATH)/data_pool
+LIB=$(CURR_PATH)/lib 
+COMM=$(CURR_PATH)/comm
+WINDOW=$(CURR_PATH)/window
 
-LD_FLAGS=-lpthread
+LD_FLAGS=-lpthread -ljsoncpp
 
-INCLUDE=-I$(DATA_POOL)
+INCLUDE=-I$(DATA_POOL) -I$(LIB)/include -I$(COMM) -I$(WINDOW)
+LIB_PATH=-L$(LIB)/lib 
 
 cc=g++
 
 ser_bin=chatServer
 cli_bin=chatClient
 
-ser_obj=$(shell ls $(SERVER)/*.cpp $(DATA_POOL)/*.cpp |\
-				sed -e 's/\/.*\///' -e 's/\.cpp/\.o/')
-cli_obj=$(shell ls $(CLIENT)/*.cpp |\
-				sed -e 's/\/.*\///' -e 's/\.cpp/\.o/')
+ser_obj=$(shell ls $(SERVER)/*.cpp $(DATA_POOL)/*.cpp $(COMM)/*.cpp | sed -e 's/\/.*\///' -e 's/\.cpp/\.o/')
+cli_obj=$(shell ls $(CLIENT)/*.cpp $(COMM)/*.cpp $(WINDOW)/*.cpp | sed -e 's/\/.*\///' -e 's/\.cpp/\.o/')
 
 
 
@@ -24,15 +26,19 @@ cli_obj=$(shell ls $(CLIENT)/*.cpp |\
 .PHONY:all
 all:$(ser_bin) $(cli_bin)
 $(ser_bin):$(ser_obj)
-	$(cc) -o $@ $^ $(LD_FLAGS)
+	$(cc) -o $@ $^ $(LIB_PATH) $(LD_FLAGS)
 $(cli_bin):$(cli_obj)
-	$(cc) -o $@ $^ $(LD_FLAGS)
+	$(cc) -o $@ $^ $(LIB_PATH) $(LD_FLAGS) -lncurses
 %.o:$(SERVER)/%.cpp 
 	$(cc) -c $< $(INCLUDE)
 %.o:$(CLIENT)/%.cpp 
-	$(cc) -c $<
+	$(cc) -c $< $(INCLUDE)
 %.o:$(DATA_POOL)/%.cpp 
 	$(cc) -c $<
+%.o:$(COMM)/%.cpp 
+	$(cc) -c $< $(INCLUDE)
+%.o:$(WINDOW)/%.cpp 
+	$(cc) -c $< $(INCLUDE)
 
 .PHONY:
 clean:
