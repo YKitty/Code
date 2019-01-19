@@ -1,8 +1,11 @@
 #include "udp_client.h"
 #include <pthread.h>
 #include "data.h"
+#include <signal.h>
 #include "window.h"
 #include <vector>
+
+volatile int is_quit = 0;
 
 typedef struct 
 {
@@ -15,7 +18,34 @@ typedef struct
 client_info_t cw;
 
 std::vector<std::string> friends; 
-static void add_user(std::string& f);
+
+static void add_user(std::string& f)
+{
+  std::vector<std::string>::iterator iter = friends.begin();
+  for (; iter != friends.end(); iter++)
+  {
+    if (*iter == f)
+    {
+      return;
+    }
+  }
+
+  friends.push_back(f);
+}
+
+static void del_user(std::string& f)
+{
+
+  std::vector<std::string>::iterator iter = friends.begin();
+  for (; iter != friends.end(); iter++)
+  {
+    if (*iter == f)
+    {
+      friends.erase(iter);
+    }
+  }
+
+}
 
 void Usage(std::string proc)
 {
@@ -62,7 +92,7 @@ void *run_header(void* arg)
   return NULL;
 }
 
-void *run_out_flist(void* arg)
+void *run_output_flist(void* arg)
 {
   client_info_t* cwp = (client_info_t*)arg;
   window* wp = cwp->winp;
@@ -84,21 +114,34 @@ void *run_out_flist(void* arg)
     show_string += "-";
     show_string += d.school;
 
-    add_user(show_string);
-
-
-    show_string += "#";
-    show_string += d.message;
-    getmaxyx(wp->get_output(), y, x);
-    wp->put_string_to_window(wp->get_output(), i++, 2, show_string);
-    if (i > y - 1)
+    if (d.type == "quit")
     {
-      i = 1;
-      wp->draw_ouput();
-      sleep(1);
+      del_user(show_string);
+    }
+    else 
+    {
+      add_user(show_string);
+
+      show_string += "#";
+      show_string += d.message;
+      //为了可以刷新输出框
+      if (i > y - 2)
+      {
+        i = 1;
+        wp->draw_ouput();
+      }
+      getmaxyx(wp->get_output(), y, x);
+      wp->put_string_to_window(wp->get_output(), i++, 2, show_string);
+
     }
 
     //flist
+    wp->draw_flist();
+    int j = 0;
+    for (; j < friends.size(); j++)
+    {
+      wp->put_string_to_window(wp->get_flist(), j + 1, 2, friends[j]);
+    }
     
   }
 }
@@ -129,6 +172,21 @@ void *run_input(void* arg)
   }
 }
 
+void send_quit(int sig)
+{
+  data d;
+  d.nick_name = cw.nick_name;
+  d.school = cw.school;
+  d.message = "None";
+  d.type = "quit";
+
+  std::string out_string;
+  d.serialize(out_string);
+
+  cw.clientp->send_data(out_string);
+  is_quit = 1;
+}
+
 // ./chatCLient 192.168.2.1 8080
 int main(int argc, char* argv[])
 {
@@ -142,6 +200,8 @@ int main(int argc, char* argv[])
   std::cin >> cw.nick_name;
   std::cout << "Please Enter Your School# ";
   std::cin >> cw.school;
+  
+  signal(SIGINT, send_quit);
 
   udp_client cli(argv[1], atoi(argv[2]));
   cli.init_client();
@@ -151,11 +211,27 @@ int main(int argc, char* argv[])
   cw.winp = &w;
   pthread_t header, output_flist, input;
   pthread_create(&header, NULL, run_header, (void*)&cw);
-  pthread_create(&output_flist, NULL, run_out_flist, (void*)&cw);
+  pthread_create(&output_flist, NULL, run_output_flist, (void*)&cw);
   pthread_create(&input, NULL, run_input, (void*)&cw);
 
-  pthread_join(header, NULL);
-  pthread_join(output_flist, NULL);
-  pthread_join(input, NULL);
+  //为了让客户端正确退出
+  //while(!is_quit)
+  //{
+  //  //因为退出之后，三个线程还没有退出，所以要进行取消,不能这样，如果这样的话，就是没有退出的话，也将这三个子线程进行退出了，就会没有图形界面框
+  //  pthread_cancel(header);
+  //  pthread_cancel(output_flist);
+  //  pthread_cancel(input);
+  //  sleep(1);
+  //}
+
+  //pthread_join(header, NULL);
+  //pthread_join(output_flist, NULL);
+  //pthread_join(input, NULL);
+  while (!is_quit)
+  {
+    //每隔一秒检测一下退出
+    sleep(1);
+  }
+  //要退出就直接让该进程退出就行了
   return 0;
 }

@@ -34,6 +34,7 @@ all:$(ser_bin) $(cli_bin)
 $(ser_bin):$(ser_obj)
 	$(cc) -o $@ $^  $(LD_FLAGS) $(INCLUDE) $(LIB_PATH)
 $(cli_bin):$(cli_obj)
+#为了进行测试，所以使用静态模式，将库附加在客户端
 	$(cc) -o $@ $^  $(LD_FLAGS)  $(INCLUDE) $(LIB_PATH) -lncurses 
 %.o:$(SERVER)/%.cpp 
 	$(cc) -c $<  $(INCLUDE)      

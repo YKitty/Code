@@ -1,4 +1,5 @@
 #include "udp_server.h"
+#include "data.h"
 
 udp_server::udp_server(int _port)
   : port(_port)
@@ -35,7 +36,23 @@ void udp_server::recv_data(std::string& out_string)
     buf[s] = 0;
     out_string = buf;
     pool.put_message(out_string);
-    online.insert(std::pair<uint32_t, struct sockaddr_in>(peer.sin_addr.s_addr, peer));
+    data d;
+    d.unserialize(out_string);
+
+    //根据key值删除，该ip地址（客户端）
+    if (d.type == "quit")
+    {
+      std::map<uint32_t,struct sockaddr_in>::iterator iter = online.find(peer.sin_addr.s_addr);
+      if(iter != online.end())
+      {
+        online.erase(iter->first);
+      }
+
+    }
+    else 
+    {
+      online.insert(std::pair<uint32_t, struct sockaddr_in>(peer.sin_addr.s_addr, peer));
+    }
   }
   else 
   {
