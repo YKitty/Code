@@ -1,21 +1,22 @@
 #pragma once 
 
 #include <iostream>
-#include <string>
-#include <json/json.h>
+#include "json/json.h"
 
-//nick_name("zs"),school("XUST"),message("nihao"),type("Nonae") -> ""
-//"{nick_name : "zs", school : "XUST",message : "nihao",type : "None"}"
+//nick_name("zs"),school("XUST"),message("nihao"),type -> ""
+//JSON的格式"{"nick_name" : "zs","school":"XUST","message":"nihao","type":"None"}"
+//JSON自动把上面的字符串转化成下面的字符串
 
 class data 
 {
   public:
-    data();
-    void serialize(std::string& out_string);
-    void unserialize(std::string& in_string);
+    data(); 
+    //序列化
+    void serialize(std::string & in_string);
+    //反序列化
+    void unserialize(std::string & out_string);
     ~data();
-
-  public:
+ // private:
     std::string nick_name;
     std::string school;
     std::string message;

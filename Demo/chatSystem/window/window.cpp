@@ -1,21 +1,21 @@
 #include "window.h"
 
-WINDOW* get_header()
+WINDOW* window::get_header()
 {
   return header;
 }
 
-WINDOW* get_list()
+WINDOW* window::get_flist()
 {
-  return list;
+  return flist;
 }
 
-WINDOW* get_output()
+WINDOW* window::get_output()
 {
   return output;
 }
 
-WINDOW* get_input()
+WINDOW* window::get_input()
 {
   return input;
 }
@@ -28,12 +28,12 @@ window::window()
 void window::put_string_to_window(WINDOW *w, int y, int x, std::string &message)
 {
   mvwaddstr(w, y, x, message.c_str()); 
-  wrefresh(header);
+  wrefresh(w);
 }
 
-void get_string_from_window(WINDOW *w, std::string &out_string)
+void window::get_string_from_window(WINDOW *w, std::string &out_string)
 {
-  char buf[1024];
+  char buf[SIZE];
   wgetnstr(w, buf, SIZE);
   out_string = buf;
 }
@@ -89,7 +89,7 @@ void window::draw_input()
 
 window::~window()
 {
-  endscr();
+  endwin();
 }
 
 //int main()
@@ -101,10 +101,11 @@ window::~window()
 //  w.draw_input();
 //  
 //  std::string message = "Please Enter# ";
-//
+//  
+//  std::string str;
 //  while (1)
 //  {
-//    w.put_string_to_window(w.get_iput(), 1, 2, message);
+//    w.put_string_to_window(w.get_input(), 1, 2, message);
 //    w.get_string_from_window(w.get_input(), str);
 //    w.draw_input();
 //  }
@@ -115,18 +116,18 @@ window::~window()
 //  //while (1)
 //  //{
 //  //  getmaxyx(w.get_output(), y, x);
-//  //  w.put_string_to_window(w.get_output, i++, 2, message);
+//  //  w.put_string_to_window(w.get_output(), i++, 2, message);
 //  //  if (i > y - 1)
 //  //  {
 //  //    i = 1;
 //  //    w.draw_ouput();
-//  //    sleep(1);
 //  //  }
+//  //  usleep(300000);
 //  //}
 //  //
 //  //
 //  //
-//  //std::string title = "聊天室";
+//  //std::string title = "Please Enter Chat System!";
 //  //int i = 1;
 //  //int y, x;
 //  //int dir = 0;
@@ -135,7 +136,7 @@ window::~window()
 //  //  //解决重影
 //  //  w.draw_header();
 //  //  getmaxyx(w.get_header(), y, x);
-//  //  w.put_string_to_window(w.get_header, y / 2, i, title);
+//  //  w.put_string_to_window(w.get_header(), y / 2, i, title);
 //  //  if (i >= x - title.size() - 3)
 //  //  {
 //  //    //左 <- 右
@@ -154,7 +155,7 @@ window::~window()
 //  //    i--;
 //  //  }
 //  //  i %= (x - title.size());
-//  //  usleep(100000);
+//  //  usleep(10000);
 //  //}
 //  return 0;
 //}

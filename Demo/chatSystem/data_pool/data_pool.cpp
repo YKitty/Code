@@ -33,3 +33,4 @@ data_pool::~data_pool()
   sem_destroy(&space_sem);
   sem_destroy(&message_sem);
 }
+

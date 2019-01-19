@@ -2,14 +2,20 @@
 #include <pthread.h>
 #include "data.h"
 #include "window.h"
+#include <vector>
 
 typedef struct 
 {
   udp_client* clientp;
   window* winp;
+  std::string nick_name;
+  std::string school;
 }client_info_t;
 
 client_info_t cw;
+
+std::vector<std::string> friends; 
+static void add_user(std::string& f);
 
 void Usage(std::string proc)
 {
@@ -22,7 +28,7 @@ void *run_header(void* arg)
   window* wp = cwp->winp;
 
   wp->draw_header();
-  std::string title = "聊天室";
+  std::string title = "Chat System!";
   int i = 1;
   int y, x;
   int dir = 0;
@@ -31,7 +37,7 @@ void *run_header(void* arg)
     //解决重影
     wp->draw_header();
     getmaxyx(wp->get_header(), y, x);
-    wp->put_string_to_window(wp->get_header, y / 2, i, title);
+    wp->put_string_to_window(wp->get_header(), y / 2, i, title);
     if (i >= x - title.size() - 3)
     {
       //左 <- 右
@@ -69,6 +75,7 @@ void *run_out_flist(void* arg)
   std::string out_string;
   std::string show_string;
   data d;
+  
   while (1)
   {
     cp->recv_data(out_string);
@@ -76,10 +83,14 @@ void *run_out_flist(void* arg)
     show_string = d.nick_name;
     show_string += "-";
     show_string += d.school;
-    show_string += "-";
+
+    add_user(show_string);
+
+
+    show_string += "#";
     show_string += d.message;
     getmaxyx(wp->get_output(), y, x);
-    wp->put_string_to_window(wp->get_output, i++, 2, show_string);
+    wp->put_string_to_window(wp->get_output(), i++, 2, show_string);
     if (i > y - 1)
     {
       i = 1;
@@ -88,6 +99,7 @@ void *run_out_flist(void* arg)
     }
 
     //flist
+    
   }
 }
 
@@ -104,11 +116,11 @@ void *run_input(void* arg)
   std::string out_string;
   while (1)
   {
-    wp->put_string_to_window(wp->get_iput(), 1, 2, tips);
+    wp->put_string_to_window(wp->get_input(), 1, 2, tips);
     wp->get_string_from_window(wp->get_input(), str);
-    d.nick_name = "None";
-    d.school = "None";
-    d.messge = str;
+    d.nick_name = cwp->nick_name;
+    d.school = cwp->school;
+    d.message = str;
     d.type = "None";
     d.serialize(out_string);
     cp->send_data(out_string);
@@ -126,6 +138,11 @@ int main(int argc, char* argv[])
     return 1;
   }
   
+  std::cout << "Please Enter You Nick Name# ";
+  std::cin >> cw.nick_name;
+  std::cout << "Please Enter Your School# ";
+  std::cin >> cw.school;
+
   udp_client cli(argv[1], atoi(argv[2]));
   cli.init_client();
   window w;
