@@ -9,7 +9,7 @@ COMM=$(CURR_PATH)/comm
 WINDOW=$(CURR_PATH)/window
 
 
-LD_FLAGS=-lpthread -lmyjson 
+LD_FLAGS=-lpthread -lmyjson
 
 INCLUDE=-I$(DATAPOOL) -I$(LIB)/include -I$(COMM) -I$(WINDOW)
 
@@ -34,7 +34,7 @@ all:$(ser_bin) $(cli_bin)
 $(ser_bin):$(ser_obj)
 	$(cc) -o $@ $^  $(LD_FLAGS) $(INCLUDE) $(LIB_PATH)
 $(cli_bin):$(cli_obj)
-#为了进行测试，所以使用静态链接，将库附加在客户端
+#为了进行测试，所以使用静态模式，将库附加在客户端
 	$(cc) -o $@ $^  $(LD_FLAGS)  $(INCLUDE) $(LIB_PATH) -lncurses 
 %.o:$(SERVER)/%.cpp 
 	$(cc) -c $<  $(INCLUDE)      
