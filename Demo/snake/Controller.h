@@ -9,6 +9,8 @@
 
 void SnakeInit(Snake* pSnake)
 {
+  //对于最后一个节点的下一个位置必须置为空
+  pSnake->pHead = NULL;
   int i = 0;
   for (; i < 3; i++)
   {
@@ -66,13 +68,14 @@ void GameInit(Game* pGame)
 
   //采用头插
   SnakeInit(&(pGame->snake));
-  FoodInit(&(pGame->foodPosition), pGame->width, pGame->height, &(pGame->snake));
 
   pGame->score = 0;
   pGame->scorePerFoof = 10;
   pGame->speed = 200;//毫秒
   pGame->width = 28;
   pGame->height = 27;
+  //对于食物的初始化一定要放在后面，因为需要知道高和宽
+  FoodInit(&(pGame->foodPosition), pGame->width, pGame->height, &(pGame->snake));
 }
 //下一步的坐标
 Position GetNextPoision(const Snake* pSnake)
@@ -171,21 +174,21 @@ void GameStart()
   DisplayFoodNode(game.foodPosition);
   while (1)
   {
-    if (GetAsyKeyState(VK_UP) && game.snake.direction != DOWN)
+    if (GetAsyncKeyState(VK_UP) && game.snake.direction != DOWN)
     {
       game.snake.direction = UP;
     }
-    if (GetAsyKeyState(VK_DOWN) && game.snake.direction != UP)
+    if (GetAsyKeyncState(VK_DOWN) && game.snake.direction != UP)
     {
-      game.snake.direction = UP;
+      game.snake.direction = DOWN;
     }
-    if (GetAsyKeyState(VK_LEFT) && game.snake.direction != RIGHT)
+    if (GetAsyncKeyState(VK_LEFT) && game.snake.direction != RIGHT)
     {
-      game.snake.direction = UP;
+      game.snake.direction = LEFT;
     }
-    if (GetAsyKeyState(VK_RIGHT) && game.snake.direction != LEFT)
+    if (GetAsyKeyncState(VK_RIGHT) && game.snake.direction != LEFT)
     {
-      game.snake.direction = UP;
+      game.snake.direction = RIGHT;
     }
     Position nextPos = GetNextPoision(&(game.snake));
     if (nextPos.x == game.foodPosition.x && nextPos.y == game.foodPosition.y)

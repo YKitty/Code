@@ -26,18 +26,20 @@ void DisplayWall(int width, int height)
   }
 
   //下面的墙
-  SetPos(0, 0);
+  SetPos(0, height + 1);
   for( ; i < width + 2; i++)
   {
     printf("#");
   }
   
+  //左边的墙
   for( ; i< height + 2; i++)
   {
     SetPos(0, i);
     printf("#");
   }
 
+  //右边的墙
   for( ; i< height + 2; i++)
   {
     SetPos(width + 1, i);
