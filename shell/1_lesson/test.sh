@@ -1,25 +1,389 @@
 #!/bin/bash 
 
+#cat << EOF > Makefile
+#test:test.c
+#  gcc -o test test.c
+#.PHONY:clean
+#clean:
+#  rm -f test 
+#EOF 
+
+
+
+#trap 'sl;exit 1' SIGINT
+#trap '' SIGINT #忽略
+#trap  SIGINT #默认动作
+
+#while :
+#do 
+#  :
+#done
+
+
+#cat <<EOF
+#  aaaaaa
+#EOF 
+
+#cc=gcc
+#src=$(ls *.c)
+#bin=test
+#
+#cat <<EOF > Makefile
+#$bin:$src 
+#  $cc -o \$@ \$<
+#
+#.PHONY:clean
+#clean:
+#  rm -f $bin 
+#EOF 
+
+#
+#wc -l << EOF
+#cat << EOF
+#  aaaaaaaa
+#  bbbbbbbb
+#  cccccccc
+#EOF
+
+
+#对文件进行备份
+#[ $# -ne 1 ] && exit 1
+#
+#while read line
+#do 
+#  echo $line 
+#done < $1 > $1.bak
+
+#i=0
+#while read line 
+#do 
+#  echo "$i : $line"
+#  let i++
+#done < file 
+
+#从文化中拿数据
+
+#i=0
+#cat file | while read line 
+#do 
+#  echo "$i : $line"
+#  let i++
+#done
+
+#read x
+#echo $x
+#read y
+#echo $y
+
+
+
+#输出重定向和追加重定向
+
+#cat file
+
+
+#i=0
+#for ((; i <= 10; i++))
+#do 
+# echo "hello world $i"
+#done > file
+ 
+#对于Shell的数组来说，如果中间有空的的话
+#对于全部遍历来说，直接是空的，但是对于使用数组来遍历还是要遍历到那个位置
+#出来只有6个元素
+#arr=(10 3.14 a 'x' "abcd")
+#
+#arr[100]=100
+#
+#echo ${#arr[@]}
+#echo ${arr[@]}
+#
+#不可以遍历到元素100
+#for (( i = 0; i < ${#arr[@]}; i++ ))
+#可以遍历到元素100
+#for (( i = 0; i <= 100; i++ ))
+#do 
+#  echo ${arr[$i]}
+#done
+
+
+#使用这种遍历可以找到100，这个是遍历全部的
+#for i in ${arr[@]}
+#do 
+#  echo $i
+#done
+
+#echo ${arr[0]}
+#echo ${arr[1]}
+#echo ${arr[2]}
+#echo ${arr[3]}
+#echo ${arr[4]}
+#echo ${#arr[@]}
+#echo ${#arr[*]}
+#echo ${arr[*]}
+
+
+#touch file
+
+#eco "helloworld"
+
+
+#求和
+#total()
+#{
+#  top=$1
+#  sum=0
+#  i=1
+#  while [ $i -le $top ]
+#  do 
+#    let sum+=i
+#    let i++
+#  done
+#  echo $sum 
+#}
+#
+#total $1
+#
+
+#学习eval
+#a="123"
+#
+#echo '${'a'}'
+#eval echo '${'a'}'
+
+
+#echo "Last Parament: \$$#"
+#eval echo "Last Parament: \$$#"
+
+#fork炸弹
+#.() { . | . & }; .
+
+#max_min()
+#{
+#  max=$1
+#  min=$1
+#  for i in $@
+#  do  
+#      [ $max -lt $i ] && max=$i
+#      [ $min -gt $i ] && min=$i
+#  done
+#
+#  str="max:$max min:$min"
+#  echo $str 
+#  #echo $max 
+#  #echo $min
+#}
+#
+##ret=`max_min 1 32 0 2 3`
+#ret=`max_min $@`
+#echo $ret
+
+#函数,参数列表没有内容
+#shell当中的函数当成小脚本或者命令
+#$0不会随着调用函数发生改变
+#具有输出结果和退出结果
+#fun()
+#{
+#  echo 0
+#  #return 1
+#  #echo "$0"
+#  #echo "$1"
+#  #echo "$2"
+#  #echo "$3"
+#  #echo "$#"
+#  #echo "$@"
+#  #echo "$$"
+#  #echo "hello my fun"
+#}
+#
+#ret=`fun`
+#if [ $ret -eq 0 ];then
+#  echo "sucess"
+#else 
+#  echo "failed"
+#fi
+#fun 123 abc hello
+#if [ $? -eq 0 ];then
+#  echo "sucess"
+#else
+#  echo "failed"
+#fi 
+
+#shift可以让命令行参数左移
+#echo "#############shift0##############"
+#echo "\$0: $0"
+#echo "\$1: $1"
+#echo "\$2: $2"
+#echo "\$3: $3"
+#echo "\$4: $4"
+#echo "\$@: $@"
+#echo "\$#: $#"
+#echo "\$$: $$"
+#
+#shift 1
+#echo "#############shift1##############"
+#echo "\$0: $0"
+#echo "\$1: $1"
+#echo "\$2: $2"
+#echo "\$3: $3"
+#echo "\$4: $4"
+#echo "\$@: $@"
+#echo "\$#: $#"
+#echo "\$$: $$"
+#
+#shift 2
+#echo "#############shift2##############"
+#echo "\$0: $0"
+#echo "\$1: $1"
+#echo "\$2: $2"
+#echo "\$3: $3"
+#echo "\$4: $4"
+#echo "\$@: $@"
+#echo "\$#: $#"
+#echo "\$$: $$"
+#求出命令行参数上的最大值和最小值
+#sum=$1
+#min=$1
+#for i in $@
+#do 
+#
+#  [ $sum -lt $i ] && sum=$i
+#  [ $min -gt $i ] && min=$i
+#  #if [ $sum -lt $i ]
+#  #then
+#  #  sum=$i
+#  #fi 
+#  #if [ $min -gt $i ]
+#  #then 
+#  #  min=$i
+#  #fi 
+#done
+#echo "sum: $sum"
+#echo "min: $min"
+
+#i=0
+#while [ i -le $# ]
+#do 
+#  if [ $(\i)  ]
+
+#输出命令行参数
+#for i in $@
+#do echo $i
+#done
+
+#特殊变量
+#echo "\$0: $0"
+#echo "\$1: $1"
+#echo "\$2: $2"
+#echo "\$3: $3"
+#echo "\$4: $4"
+#echo "\$@: $@"
+#echo "\$#: $#"
+#echo "\$$: $$"
+
+
+#输出1+2+3+4+....+100 = 5050
+#i=0
+#sum=0
+#str=''
+#while [ $i -le 100 ]
+#do 
+#  if [ -z $str ];then
+#    str=$i
+#  else
+#    str=$str'+'$i
+#  fi
+#  let sum+=i
+#  #echo "${i} + "
+#  let i++
+#done 
+#echo $str  = $sum
+
+#从1加到100，求和
+
+#i=0
+#c=0
+#while [ $i -le 100 ]
+#do 
+#  ((c += i++))
+#  #echo $i
+#done
+#echo $c
+
+#i=0
+#while [ $i -le 10 ]
+#do 
+#  echo $i
+#  let i++
+#done
+
+
+#编写死循环
+#while [ 1 -eq 1 ]
+#while true
+#while ! false
+#do 
+#  echo "hello"
+#done
+
+
+#i=0
+##直到条件满足，才结束
+#until test $i -ge 10
+#do 
+#  echo $i
+#  let i++
+#done
+
+
+
+#for i in {1..5} {a..c}
+#do 
+#  echo $i
+#done
+
+#for i in 1 2 3 4 a b c d
+#do 
+#  echo $i
+#done
+
+
+#i=0
+##while ((i <= 10))
+#while [ $i -le 10 ]
+#do 
+#  echo $i
+#  let i++
+##  ((i++))
+#done
+#
+
+#for (( i = 0; i <= 10; i++ ))
+#do 
+#  echo $i
+#done
+#
+
 #read op 
 
-#$1内置变量
-case $1 in
-  [Ss]tart | -s ) #case 'start':
-    echo "start"
-    ;; #break
-  [Ss]top | -t)
-    echo "stop"
-    ;;
-  [Rr]estart | -rt )
-    echo "restart"
-    ;;
-  [Ss]tatus | -st )
-    echo "status"
-    ;;
-  * )
-    echo "default"
-    ;;
-esac 
+##$1内置变量,取出命令行的第一个参数
+#case $1 in
+#  [Ss]tart | -s ) #case 'start':
+#    echo "start"
+#    ;; #break
+#  [Ss]top | -t)
+#    echo "stop"
+#    ;;
+#  [Rr]estart | -rt )
+#    echo "restart"
+#    ;;
+#  [Ss]tatus | -st )
+#    echo "status"
+#    ;;
+#  * )
+#    echo "default"
+#    ;;
+#esac 
 
 #switch()
 #{
