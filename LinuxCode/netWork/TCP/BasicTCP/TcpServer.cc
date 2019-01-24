@@ -26,7 +26,7 @@ void InitDict()
 
 void Usage(std::string proc_)
 {
-  std::cout << "Usage: " << proc_ << "ip  port" << std::endl;
+  std::cout << "Usage: " << proc_ << " ip  port" << std::endl;
 }
 
 int main(int argc, char* argv[])
