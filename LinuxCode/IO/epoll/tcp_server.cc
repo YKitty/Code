@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
   for ( ; ; )
   {
     //1024表示最大可同时等待多少个事件，evs用来存放等待成功的事件的
+    //对于evs是覆盖式的拷贝，每次都会把前面的都覆盖了
     nfds = epoll_wait(ep_fd, evs, 1024, 3000);
     if (nfds < 0)
     {
@@ -111,7 +112,8 @@ int main(int argc, char* argv[])
       {
         //接收消息并且发送消息给客户端
         char buf[1024] = { 0 };
-        if (recv(evs[i].data.fd, buf, 1023, 0) < 0)
+        //对于处理和客户端进行通信的时候，当接收到的消息是0的话，表示客户端退出，小于0表示recv函数失败
+        if (recv(evs[i].data.fd, buf, 1023, 0) <= 0)
         {
           //接收失败就从epoll集合中取出这个事件，将这个时间放在ev中
           epoll_ctl(ep_fd, EPOLL_CTL_DEL, evs[i].data.fd, &ev);

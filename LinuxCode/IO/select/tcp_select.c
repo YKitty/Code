@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
   {
     //清空描述符集合
     FD_ZERO(&readfds);
-    FD_SET(lst_fd, &readfds);
+    //FD_SET(lst_fd, &readfds);
     
     //将所有的描述符都添加到集合当中
     for (i = 0; i < 1024; i++)
@@ -151,10 +151,12 @@ int main(int argc, char* argv[])
           //那么代表有客户端连接的数据到来了
           char buff[1024] = { 0 };  
           ret = recv(fd_list[i], buff, 1023, 0);
+          //表示客户端退出或者接收数据失败，那就重新再来，关闭文件描述符
           if (ret <= 0)
           {
             close(fd_list[i]);
             fd_list[i] = -1;
+            continue;
           }
           printf("clinet say#%s\n", buff);
           send(fd_list[i], "what???", 7, 0);
