@@ -99,7 +99,13 @@ int main(int argc, char* argv[])
           continue;
         }
         //创建客户端结点事件，并且加入到epoll中
-        ev.events = EPOLLIN;
+        //EPOLLET 边缘触发
+        //EPOLLLT 水平触发
+        //EPOLLIN 关心可读事件
+        //EPOLOUT 关心可写事件
+        //因为边缘触发是每次新数据到来仅触发一次事件
+        //因此我们必须保证一次能把数据全部读完
+        ev.events = EPOLLIN | EPOLLET;
         ev.data.fd = cli_fd;
         if (epoll_ctl(ep_fd, EPOLL_CTL_ADD, cli_fd, &ev) < 0)
         {
@@ -107,13 +113,14 @@ int main(int argc, char* argv[])
           continue;
         }
       }
-      //表示等待的是可读事件
+      sda
+      //表示sj等待的是可读事件
       else if (evs[i].events & EPOLLIN)
       {
         //接收消息并且发送消息给客户端
         char buf[1024] = { 0 };
         //对于处理和客户端进行通信的时候，当接收到的消息是0的话，表示客户端退出，小于0表示recv函数失败
-        if (recv(evs[i].data.fd, buf, 1023, 0) <= 0)
+        if (recv(evs[i].data.fd, buf, 2, 0) <= 0)
         {
           //接收失败就从epoll集合中取出这个事件，将这个时间放在ev中
           epoll_ctl(ep_fd, EPOLL_CTL_DEL, evs[i].data.fd, &ev);
