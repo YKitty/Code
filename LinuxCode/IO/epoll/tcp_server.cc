@@ -113,9 +113,8 @@ int main(int argc, char* argv[])
           continue;
         }
       }
-      sda
-      //表示sj等待的是可读事件
-      else if (evs[i].events & EPOLLIN)
+      //表示等待的是可读事件
+      else if (evs[i].events == EPOLLIN)
       {
         //接收消息并且发送消息给客户端
         char buf[1024] = { 0 };
@@ -123,6 +122,7 @@ int main(int argc, char* argv[])
         if (recv(evs[i].data.fd, buf, 2, 0) <= 0)
         {
           //接收失败就从epoll集合中取出这个事件，将这个时间放在ev中
+          std::cout << "recv quit!" << std::endl;
           epoll_ctl(ep_fd, EPOLL_CTL_DEL, evs[i].data.fd, &ev);
           close(evs[i].data.fd);
           continue;
