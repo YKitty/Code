@@ -4,10 +4,60 @@
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include <errno.h>
 
 void Usage(char* proc)
 {
   std::cout << proc << " port" << std::endl;
+}
+
+void SetNoBlock(int fd)
+{
+  int oldfl = fcntl(fd, F_GETFL);
+  if (oldfl < 0)
+  {
+    std::cerr << "fcntl error!" << std::endl;
+    exit(7);
+  }
+
+  fcntl(fd, F_SETFL, oldfl | O_NONBLOCK);
+}
+
+bool ReadNoBlock(int sockfd, char* buf, int len)
+{
+  int total_len = 0;
+  int read_len = 0;
+  for ( ; ; )
+  {
+    read_len = recv(sockfd, buf + total_len, len, 0);
+      if (read_len < 0)
+      {
+        //接收的时候被信号打断了，也就是数据没有接收完毕，所以需要继续接收
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+        {
+          continue;
+        }
+        std::cerr << "recv error!" << std::endl;
+        return false;
+      }
+      
+      if (read_len == 0)
+      {
+        //接收完毕，或者对端关闭
+        return false;
+      }
+
+      //表示数据接收完毕了
+      if (read_len < len)
+      {
+        break;
+      }
+
+      total_len += read_len;
+  }
+  buf[total_len] = '\0';
+  return true;
 }
 
 int main(int argc, char* argv[])
@@ -32,6 +82,11 @@ int main(int argc, char* argv[])
     std::cerr << "socket error!" <<std::endl;
     exit(2);
   }
+  
+  //设置服务器可以立即重启
+  int opt = 1;
+  setsockopt(lst_fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+
   //绑定套接字
   lst_addr.sin_family = AF_INET;
   lst_addr.sin_port = htons(atoi(argv[1]));
@@ -105,7 +160,11 @@ int main(int argc, char* argv[])
         //EPOLOUT 关心可写事件
         //因为边缘触发是每次新数据到来仅触发一次事件
         //因此我们必须保证一次能把数据全部读完
+        
+        //对于和客户端进行通信的文件描述符设置为边缘触发
         ev.events = EPOLLIN | EPOLLET;
+
+        //对于边缘触发的话，必须将cli_fd文件描述符设置为非阻塞式的
         ev.data.fd = cli_fd;
         if (epoll_ctl(ep_fd, EPOLL_CTL_ADD, cli_fd, &ev) < 0)
         {
@@ -119,7 +178,9 @@ int main(int argc, char* argv[])
         //接收消息并且发送消息给客户端
         char buf[1024] = { 0 };
         //对于处理和客户端进行通信的时候，当接收到的消息是0的话，表示客户端退出，小于0表示recv函数失败
-        if (recv(evs[i].data.fd, buf, 2, 0) <= 0)
+        //if (recv(evs[i].data.fd, buf, 2, 0) <= 0)
+        //对于边缘触发的话，必须每一次进行读取数据的时候一次将数据读取完毕
+        if (ReadNoBlock(evs[i].data.fd, buf, 2) <= 0)
         {
           //接收失败就从epoll集合中取出这个事件，将这个时间放在ev中
           std::cout << "recv quit!" << std::endl;
