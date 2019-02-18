@@ -4,12 +4,22 @@
 #include <thread>
 #include <mutex>
 #include <vector>
+#include <map>
+
+
+#ifdef _WIN32
+#include <windows.h>
+#endif // _WIN32
 
 
 //管理自由链表数组的长度
 const size_t NLISTS = 240;
 //最大可以一次分配多大的内存64K
 const size_t MAXBYTES = 64 * 1024;
+//对于一页是4096byte，12就是2的次方
+const size_t PAGE_SHIFT = 12;
+//对于PageCache的最大可以存放NPAGES页
+const size_t NPAGES = 129;
 
 
 static inline void*& NEXT_OBJ(void* obj)
@@ -35,6 +45,7 @@ public:
 		_size += num;
 	}
 
+	//头删
 	void* Pop()
 	{
 		void* obj = _list;
@@ -44,6 +55,7 @@ public:
 		return obj;
 	}
 
+	//头插
 	void Push(void* ptr)
 	{
 		NEXT_OBJ(ptr) = _list;
@@ -51,10 +63,34 @@ public:
 		_size++;
 	}
 
+	size_t MaxSize()
+	{
+		return _maxsize;
+	}
+
+	void SetMaxSize(size_t num)
+	{
+		_maxsize = num;
+	}
+
+	size_t Size()
+	{
+		return _size;
+	}
+
+	void* Clear()
+	{
+		_size = 0;
+		void* list = _list;
+		_list = nullptr;
+
+		return list;
+	}
+
 private:
 	void* _list = nullptr;//形成一个自由链表
 	size_t _size = 0;//有多少个内存结点
-	size_t _maxsize = 0;//最多有多少个内存结点
+	size_t _maxsize = 1;//最多有多少个内存结点，作用：水位线，自由链表当中现在有多少内存块
 };
 
 //对于span是为了对于thread cache还回来的内存进行管理，
@@ -62,10 +98,10 @@ private:
 typedef size_t PageID;
 struct Span
 {
-	PageID _id; //页号
-	size_t _npage; //页的数量
-	Span* _next;
-	Span* _prev;
+	PageID _pageid = 0; //页号
+	size_t _npage = 0; //页的数量
+	Span* _next = nullptr;
+	Span* _prev = nullptr;
 
 	void* _objlist = nullptr; //对象自由链表
 	size_t _objsize = 0;	//记录该span上的内存块的大小
@@ -137,6 +173,8 @@ public:
 		return span;
 	}
 
+	//为了给每一个桶加锁
+	std::mutex _mtx;
 private:
 	Span * _head = nullptr;
 };
@@ -228,6 +266,45 @@ public:
 		{
 			return -1;
 		}
+	}
+
+	//对于不同的byte获取不一样数量的内存
+	static inline size_t NumMoveSize(size_t size)
+	{
+		if (size == 0)
+		{
+			return 0;
+		}
+
+		int num = (int)(MAXBYTES / size);
+		//当申请的size是64K的时候，就一次申请64K * 2
+		if (num < 2)
+		{
+			num = 2;
+		}
+		//当申请的size是8byte的时候，就一次申请512 * 8byte
+		if (num >= 512)
+		{
+			num = 512;
+		}
+
+		return num;
+	}
+
+	//计算要获取几页
+	static inline size_t NumMovePage(size_t size)
+	{
+		size_t num = NumMoveSize(size);
+		size_t npage = (num * size) >> PAGE_SHIFT;
+
+		//如果申请的内存是0byte的话，计算下来就会申请0页
+		//我们对其进行处理当申请的内存是0byte的时候，我们就申请一页的内存
+		if (npage == 0)
+		{
+			npage = 1;
+		}
+
+		return npage;
 	}
 
 };

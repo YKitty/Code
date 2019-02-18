@@ -23,6 +23,10 @@ public:
 
 	//从span链表数组中拿出和bytes相等的span链表，并在该链表中查找一个还有内存块的span
 	Span* GetOneSpan(SpanList* spanlist, size_t bytes);
+
+	//将ThreadCache中的内存块归还给CentralCache
+	void ReleaseListToSpans(void* start, size_t byte);
+
 private:
 	SpanList _spanlist[NLISTS];//中心缓存的span链表的数组，默认大小是	NLISTS : 240
 

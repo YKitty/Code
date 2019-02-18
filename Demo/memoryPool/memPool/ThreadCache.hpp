@@ -20,6 +20,9 @@ public:
 	//从中心缓存中拿取内存，index是数组下标，size是要拿取内存的字节大小
 	void* FetchFromCentralCache(size_t index, size_t size);
 
+	//当链表中的对象太多的时候，开始回收
+	void ListTooLong(FreeList* freelist, size_t byte);
+
 private:
 	FreeList _freelist[NLISTS];//创建了一个自由链表数组，长度为NLISTS是240
 	/*int _tid;
