@@ -150,13 +150,17 @@ public:
     }
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
+
+    return true;
   }
 
   //线程安全的任务入队
   bool PushTask(HttpTask& tt)
   {
+    std::cout << "add task!" << std::endl;
     QueueLock();
     _task_queue.push(tt);
+    ThreadWakeUpOne();
     QueueUnLock();
     return true;
   }
@@ -168,6 +172,8 @@ public:
     //线程接口中再出队之前就会进行加锁，因此，这里不需要进行加解锁
     tt = _task_queue.front();
     _task_queue.pop();
+
+    return true;
   }
 
   //销毁线程池
@@ -182,11 +188,9 @@ public:
     {
       ThreadWakeUpAll();
     }
+
+    return true;
   }
 
 };
 
-int main()
-{
-  return 0;
-}

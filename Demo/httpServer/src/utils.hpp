@@ -18,6 +18,7 @@
 #define LOG(...) do{\
         fprintf(stdout, __VA_ARGS__);\
     }while(0)
+
 #define MAX_HTTPHDR 4096
 
 //包含HttpRequest解析出来的请求信息
@@ -48,7 +49,7 @@ public:
 
   bool RequestIsCGI()
   {
-    ;
+    return true;
   }
 };
 
@@ -105,7 +106,7 @@ public:
       int hdr_len = ptr - tmp;
       _http_header.assign(tmp, hdr_len);
       recv(_cli_sock, tmp, hdr_len + 4, 0);
-      LOG("header:[]\n");
+      LOG("header:%s\n", tmp);
       break;
     }
 
@@ -152,6 +153,7 @@ public:
     InitResponse(info);
     //执行CGI响应
     ProcessCGI(info);
+    return true;
   }
 
   bool FileHandler(RequestInfo& info)
@@ -168,6 +170,7 @@ public:
    // {
    //   ProcessFile(info);
    // }
+    return true;
   }
 };
 
