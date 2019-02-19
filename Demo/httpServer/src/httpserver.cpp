@@ -5,7 +5,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-
+#include "utils.hpp"
 
 #define MAX_LISTEN 5
 #define MAX_THREAD 5
@@ -21,7 +21,7 @@ private:
 
 private:
   //http任务的处理函数
-  static bool (HttpHandler) (int sock)
+  static bool HttpHandler(int sock)
   {
     RequestInfo info;
     HttpRequest req(sock);
@@ -128,3 +128,10 @@ public:
       return true;
   }
 };
+
+
+int main()
+{
+  //ThreadPool tp(5);
+  return 0;
+}

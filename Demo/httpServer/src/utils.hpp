@@ -45,6 +45,11 @@ public:
   {
     _err_code = code;
   }
+
+  bool RequestIsCGI()
+  {
+    ;
+  }
 };
 
 //http数据的接收接口
@@ -84,11 +89,13 @@ public:
       }
       //ptr为NULL表示tmp里面没有\r\n\r\n
       char* ptr = strstr(tmp, "\r\n\r\n");
+      //当读了MAX_HTTPHDR这么多的字节，但是还是没有把头部读完，说明头部过长了
       if ((ptr == NULL) && (ret == MAX_HTTPHDR))
       {
         info.SetError("413");
         return false;
       }
+      //当读的字节小于这么多，并且没有空行出现，说明数据还没有从发送端发送完毕，所以接收缓存区，需要等待一下再次读取数据
       else if ((ptr == NULL) && (ret < MAX_HTTPHDR))
       {
         usleep(1000);
@@ -98,7 +105,7 @@ public:
       int hdr_len = ptr - tmp;
       _http_header.assign(tmp, hdr_len);
       recv(_cli_sock, tmp, hdr_len + 4, 0);
-      LOG("header:[]");
+      LOG("header:[]\n");
       break;
     }
 
@@ -106,7 +113,7 @@ public:
   }
 
   //解析http请求头
-  bool ParseHttpHeader();
+  bool ParseHttpHeader(RequestInfo& info);
   //向外提供解析结果
   RequestInfo& GetRequestInfo(); 
 };
@@ -146,20 +153,21 @@ public:
     //执行CGI响应
     ProcessCGI(info);
   }
+
   bool FileHandler(RequestInfo& info)
   {
     //初始化文件响应信息
     InitResponse(info);
     //执行文件列表展示响应
-    if (DIR)
-    {
-      ProcessList();
-    }
-    //执行文件下载响应
-    else 
-    {
-      ProcessFile(info);
-    }
+   // if (DIR)
+   // {
+   //   ProcessList();
+   // }
+   // //执行文件下载响应
+   // else 
+   // {
+   //   ProcessFile(info);
+   // }
   }
 };
 
