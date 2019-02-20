@@ -105,17 +105,20 @@ private:
   //static是为了这个函数只能有一个参数，不能有隐含的this指针
   static void* thr_start(void* arg)
   {
-    ThreadPool *tp  = (ThreadPool*)arg;
-    tp->QueueLock();
-    while (tp->QueueIsEmpty())
+    while (1)
     {
-      tp->ThreadWait();
-    }
+      ThreadPool *tp  = (ThreadPool*)arg;
+      tp->QueueLock();
+      while (tp->QueueIsEmpty())
+      {
+        tp->ThreadWait();
+      }
 
-    HttpTask ht;
-    tp->PopTask(ht);
-    tp->QueueUnLock();
-    ht.Run();
+      HttpTask ht;
+      tp->PopTask(ht);
+      tp->QueueUnLock();
+      ht.Run();
+    }
     return NULL;
   }
 
@@ -157,7 +160,6 @@ public:
   //线程安全的任务入队
   bool PushTask(HttpTask& tt)
   {
-    std::cout << "add task!" << std::endl;
     QueueLock();
     _task_queue.push(tt);
     ThreadWakeUpOne();

@@ -40,28 +40,27 @@ private:
     //  sprintf(ouput_buf, "HTTP/1.0 302 REDIRECT\nContent-Length:%lu\nLocation:https://www.taobao.com\n\n%s", strlen(hello), hello);
     //  send(sock, ouput_buf, sizeof(ouput_buf), 0);
     //}
-    req.RecvHttpHeader(info);
     //接收http头部
-    //if (req.RecvHttpHeader(info) == false)
-    //{
-    //  //goto out;
-    //}
+    if (req.RecvHttpHeader(info) == false)
+    {
+      //goto out;
+    }
     //解析http头部
-    //if (req.ParseHttpHeader(info) == false)
-    //{
-    //  goto out;
-    //}
-    ////判断请求是否是CGI请求
-    //if (info.RequestIsCGI())
-    //{
-    //  //若当前请求类型是CGI请求，则执行CGI响应
-    //  rsp.CGIHandler(info);
-    //}
-    //else 
-    //{
-    //  //若当前请求类型不是CGI请求，则执行文件列表或文件下载响应
-    //  rsp.FileHandler(info);
-    //}
+    if (req.ParseHttpHeader(info) == false)
+    {
+      //goto out;
+    }
+    //判断请求是否是CGI请求
+    if (info.RequestIsCGI())
+    {
+      //若当前请求类型是CGI请求，则执行CGI响应
+      rsp.CGIHandler(info);
+    }
+    else 
+    {
+      //若当前请求类型不是CGI请求，则执行文件列表或文件下载响应
+      rsp.FileHandler(info);
+    }
     
     close(sock);
     return true;
@@ -86,7 +85,9 @@ public:
       LOG("sock error:%s\n", strerror(errno));
       return false;
     }
-
+    int opt = 1;
+    //设置地址复用
+    setsockopt(_serv_sock, SOL_SOCKET, SO_REUSEADDR, (void*)&opt, sizeof(opt));
     sockaddr_in lst_addr;
     lst_addr.sin_family = AF_INET;
     lst_addr.sin_port = htons(atoi(port.c_str()));
@@ -136,7 +137,6 @@ public:
           LOG("accept error :%s\n", strerror(errno));
           return false;
         }
-        std::cout << "new connect!" << std::endl;
         HttpTask ht;
         ht.SetHttpTask(new_sock, HttpHandler);
         _tp->PushTask(ht);
@@ -159,7 +159,13 @@ int main(int argc, char* argv[])
     exit(1);
   }
   HttpServer server;
-  server.HttpServerInit(argv[1], argv[2]);
-  server.Start();
+  if (server.HttpServerInit(argv[1], argv[2]) == false)
+  {
+    return -1;
+  }
+  if (server.Start() == false)
+  {
+    return -1;
+  }
   return 0;
 }
