@@ -26,9 +26,12 @@
 #define MAX_PATH 256
 
 std::unordered_map<std::string, std::string> g_err_desc = {
-  {"200", "OK"};
-  {"400", ""}
-}
+  {"200", "OK"},
+  {"400", "uthorized"},
+  {"403", "Forbidden"},
+  {"404", "Not Found"},
+  {"405", "Method Not Allowed"},
+};
 
 class Utils 
 {
@@ -96,8 +99,10 @@ public:
     std::stringstream ss;
     ss << str;
     ss >> num;
+    return num;
   }
-  static void MakeETag(int64_t size, int64_t ino, int64_t mtime, std::string& etag)
+
+  static void MakeETag(int64_t ino, int64_t size, int64_t mtime, std::string& etag)
   {
     //"ino-size-mtime"
     std::stringstream ss;
@@ -195,7 +200,7 @@ public:
       int hdr_len = ptr - tmp;
       _http_header.assign(tmp, hdr_len);
       recv(_cli_sock, tmp, hdr_len + 4, 0);
-      LOG("header:%s\n", _http_header.c_str());
+      LOG("header:\n%s\n", _http_header.c_str());
       break;
     }
 
@@ -206,6 +211,10 @@ public:
   bool PathIsLegal(std::string& path, RequestInfo &info)
   {
     std::string file = WWWROOT + path;
+    
+    //测试文件路径是否正确
+    //std::cout << file << "\n\n\n\n\n\n";
+    
     //文件不存在
     if (stat(file.c_str(), &(info._st)) < 0)
     {
@@ -213,10 +222,13 @@ public:
       return false;
     }
     
+    //文件存在的话，就会将相对路径转化为绝对路径
     char tmp[MAX_PATH] = { 0 };
     realpath(file.c_str(), tmp);
 
     info._path_phys = tmp;
+    //判断相对路径，防止出现就是将相对路径改为绝对路径的时候，这个绝对路径中没有根目录了
+    //也就是访问权限不够了
     if (info._path_phys.find(WWWROOT) == std::string ::npos)
     {
       info._err_code = "403";
@@ -243,6 +255,14 @@ public:
       info._err_code = "400";
       return false;
     }
+
+    //测试有没有取出首行的三部分
+    //std::cout << "\n\n\n\n";
+    //for (size_t i = 0; i < line_list.size(); i++)
+    //{
+    //  std::cout << line_list[i] << std::endl;
+    //}
+    //std::cout << "\n\n\n\n";
 
     std::string url;
     //方法
@@ -284,6 +304,8 @@ public:
   //解析http请求头
   bool ParseHttpHeader(RequestInfo& info)
   {
+
+
     //http请求头解析
     //请求方法 URL 协议版本\r\n
     //key: val\r\nkey: val
@@ -309,11 +331,16 @@ public:
       info._hdr_list[hdr_list[i].substr(0, pos)] = hdr_list[i].substr(pos + 2);
     }
 
-    for (auto it = info._hdr_list.begin(); it != info._hdr_list.end(); it++)
-    {
-      std::cout << "[ " << it->first << "] = [" << it->second << "]" << std::endl;
-    }
+    //测试将头部，已经已经全部放到info中的map了
+    //for (auto it = info._hdr_list.begin(); it != info._hdr_list.end(); it++)
+    //{
+    //  std::cout << "[" << it->first << "] = [" << it->second << "]" << std::endl;
+    //}
+    //std::cout << "\n\n\n\n\n";
 
+    //测试解析出错，返回页面404
+    //info._err_code = "404";
+    //return false;
     return true;
   }
 
@@ -343,13 +370,15 @@ public:
   //初始化的一些请求响应信息
   bool InitResponse(RequestInfo req_info)
   {
-    req_info._st.st_size;
-    req_info._st.st_ino;
-    req_info._st.st_mtime;
+    //req_info._st.st_size;
+    //req_info._st.st_ino;
+    //req_info._st.st_mtime;
+    
+
     //Last-Modified
     Utils::DigitToStr(req_info._st.st_mtime, _mtime);
     //ETag
-    Utils::MakeETag(req_info._st.st_size, req_info._st.st_ino, req_info._st.st_mtime, _etag);
+    Utils::MakeETag(req_info._st.st_ino, req_info._st.st_size, req_info._st.st_mtime, _etag);
     //Date
     time_t t = time(NULL);
     Utils::TimeToGmt(t, _date);
@@ -382,6 +411,8 @@ public:
     ss.clear();
     SendData(buf);
     SendData("\r\n");
+
+    return true;
   }
 
   //文件下载功能
@@ -400,7 +431,7 @@ public:
     //Connection: close\r\n\r\n
     //Transfer-Encoding: chunked\r\n  分块传输
     //正文：
-    //每一个目录下的文件都要阻止一个html标签信息
+    //每一个目录下的文件都要输出一个html标签信息
     std::string rsp_header;
     rsp_header = info._version + " 200 OK\r\n";
     rsp_header += "Connection: close\r\n";
@@ -409,7 +440,7 @@ public:
       rsp_header += "Transfer-Encoding: chunked\r\n";
     }
     rsp_header += "ETag: " + _etag + "\r\n";
-    rsp_header += "Last-Modified: " + _mtime + "\r\n\r\n";
+    rsp_header += "Last-Modified: " + _mtime + "\r\n";
     rsp_header += "Date: " + _date + "\r\n\r\n";
     SendData(rsp_header);
 
@@ -419,47 +450,67 @@ public:
     rsp_body += "<meta charset='UTF-8'>";
     rsp_body += "</head><body>";
     rsp_body += "<h1>" + info._path_info + "</h1><hr />";
+    //测试，看组织的头部是否正确
+    //std::cout << "\n\n" << rsp_body << "\n\n";
     SendCData(rsp_body);
+    while (1)
     {
       //scandir函数
       //获取目录下的每一个文件，组织出html信息，chunk传输
       std::string file_html;
-      SendCData(file_html);
+      file_html = "<li>" + info._path_info + "<strong>";
+      file_html += "</small>" + info._err_code +"</li>";
+    SendCData(file_html);
     }
     rsp_body = "</body></html>";
     SendCData(rsp_body);
-    SendData("");
+    //进行分块发送的时候告诉已经发送完毕了，不用再让客户端进行一个等待正文的过程了
+    SendCData("");
 
     return true;
   }
+
   //cgi请求的处理
   bool ProcessCGI(RequestInfo& info)
   {
     return true;
   }
+
   //处理出错响应
   bool ErrHandler(RequestInfo& info)
   {
     std::string rsp_header;
+    std::string rsp_body;
     //首行 协议版本 状态码 状态描述\r\n
     //头部 Content-Length Date 
     //空行 
     //正文 rsp_body = "<html><body><h1>404<h1></body></html"
-    rsp_header = info._version + " " + info._err_code + " ";
+    rsp_header = info._version;
+    rsp_header += " " + info._err_code + " ";
     rsp_header += Utils::GetErrDesc(info._err_code) + "\r\n";
 
     time_t t = time(NULL);
     std::string gmt;
     Utils::TimeToGmt(t, gmt);
     rsp_header += "Date: " + gmt + "\r\n";
-    std::string rsp_body;
-    rsp_body = "<html><body><h1>" + info._err_code + "<h1></body></html>";
-
     std::string cont_len;
+    rsp_body = "<html><body><h1>" + info._err_code + "<h1></body></html>";
     Utils::DigitToStr(rsp_body.length(), cont_len);
     rsp_header += "Content-Length: " + cont_len + "\r\n\r\n";
+  
+    std::cout << "\n\n\n\n";
+    std::cout << rsp_header << std::endl;
+    std::cout << rsp_body << std::endl;
+    std::cout << "\n\n\n\n";
 
-    send(_cli_sock, rsp_header, );
+    //测试可以将网页发送过去
+    //char ouput_buf[1024];
+    //memset(ouput_buf, 0, sizeof(ouput_buf));
+    //const char* hello = "<h1>hello world</h1>";
+    //sprintf(ouput_buf, "HTTP/1.0 302 REDIRECT\nContent-Length:%lu\nLocation:https://www.taobao.com\n\n%s", strlen(hello), hello);
+    //send(_cli_sock, ouput_buf, sizeof(ouput_buf), 0);
+    send(_cli_sock, rsp_header.c_str(), rsp_header.length(), 0);
+    send(_cli_sock, rsp_body.c_str(), rsp_body.length(), 0);
     return true;
   }
   

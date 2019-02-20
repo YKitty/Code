@@ -22,33 +22,15 @@ private:
     HttpRequest req(sock);
     HttpResponse rsp(sock);
 
-    //for ( ; ; )
-    //{
-    //  
-    //  //这里对于服务器与客户端进行通信的时候，只需要一次就好了，所以就不需要进行死循环
-    //  char buf[10240];
-    //  memset(buf, 0, sizeof(buf));
-    //  if (recv(sock, buf, sizeof(buf), 0) < 0)
-    //  {
-    //    std::cerr << "recv error!" << std::endl;
-    //  }
-    //  std::cout << "requst: " << buf << std::endl;
-    //  
-    //  char ouput_buf[1024];
-    //  memset(ouput_buf, 0, sizeof(ouput_buf));
-    //  const char* hello = "<h1>hello world</h1>";
-    //  sprintf(ouput_buf, "HTTP/1.0 302 REDIRECT\nContent-Length:%lu\nLocation:https://www.taobao.com\n\n%s", strlen(hello), hello);
-    //  send(sock, ouput_buf, sizeof(ouput_buf), 0);
-    //}
     //接收http头部
     if (req.RecvHttpHeader(info) == false)
     {
-      //goto out;
+      goto out;
     }
     //解析http头部
     if (req.ParseHttpHeader(info) == false)
     {
-      //goto out;
+      goto out;
     }
     //判断请求是否是CGI请求
     if (info.RequestIsCGI())
@@ -64,10 +46,10 @@ private:
     
     close(sock);
     return true;
-//out:
-//    rsp.ErrHandler(info);
-//    close(sock);
-//    return false;
+out:
+    rsp.ErrHandler(info);
+    close(sock);
+    return false;
   }
 
 public:
