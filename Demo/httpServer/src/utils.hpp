@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string.h>
 #include <time.h>
+#include <dirent.h>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -14,8 +15,10 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <signal.h>
 
 #define LOG(...) do{\
         fprintf(stdout, __VA_ARGS__);\
@@ -24,6 +27,19 @@
 #define MAX_HTTPHDR 4096
 #define WWWROOT "www"
 #define MAX_PATH 256
+#define MAX_BUFF 4096
+
+//文件类型的映射
+std::unordered_map<std::string, std::string> g_mime_type = {
+  {"txt", "text/plain"},
+  {"html", "text/html"},
+  {"htm", "text/html"},
+  {"jpg", "image/jpeg"},
+  {"zip", "application/zip"},
+  {"mp3", "audio/mpeg"},
+  {"mpeg", "video/mpeg"},
+  {"unknow", "application/octet-steam"},
+};
 
 std::unordered_map<std::string, std::string> g_err_desc = {
   {"200", "OK"},
@@ -76,7 +92,7 @@ public:
   }
 
   //gmtime 将一个时间戳转换为一个结构体
-  //shifttime 将一个时间转为一个格式
+  //strftime 将一个时间转为一个格式
   static void TimeToGmt(time_t t, std::string& gmt)
   {
     struct tm *mt = gmtime(&t);
@@ -108,6 +124,29 @@ public:
     std::stringstream ss;
     ss << "\"" << std::hex << ino << "-" << std::hex << size << "-" << std::hex << mtime << "\"";
     etag = ss.str();
+  }
+
+  //获取文件类型
+  static void GetMime(const std::string& file, std::string& mime)
+  {
+    size_t pos = file.find_last_of(".");
+    if (pos == std::string::npos)
+    {
+      mime = g_mime_type["unknow"];
+      return;
+    }
+    //后缀
+    std::string suffix = file.substr(pos + 1);
+    auto it = g_mime_type.find(suffix);
+    if (it == g_mime_type.end())
+    {
+      mime = g_mime_type["unknow"];
+      return;
+    }
+    else
+    {
+      mime = it->second;
+    }
   }
 };
 
@@ -362,6 +401,8 @@ private:
   //系统响应时间
   std::string _date;
 
+  std::string _fsize;
+  std::string _mime;
 public:
   HttpResponse(int sock)
     : _cli_sock(sock)
@@ -376,12 +417,15 @@ public:
     
 
     //Last-Modified
-    Utils::DigitToStr(req_info._st.st_mtime, _mtime);
+    Utils::TimeToGmt(req_info._st.st_mtime, _mtime);
     //ETag
     Utils::MakeETag(req_info._st.st_ino, req_info._st.st_size, req_info._st.st_mtime, _etag);
     //Date
     time_t t = time(NULL);
     Utils::TimeToGmt(t, _date);
+    //fsize
+    Utils::DigitToStr(req_info._st.st_size, _fsize);
+    Utils::GetMime(req_info._st.st_mode, _mime);
     return true;
   }
 
@@ -394,13 +438,15 @@ public:
     return true;
   }
 
+  //按照chunked机制进行分块传输
+  //chunked发送数据的格式
+  //假设发送hello 
+  //05\r\n          ：发送的数据的大小
+  //hello\r\n       ：发送这么多的数据
+  //最后一个分块    
+  //0\r\n\r\n       ：发送最后的一个分块
   bool SendCData(const std::string& buf)
   {
-    //发送hello 
-    //05\r\n
-    //hello\r\n
-    //最后一个分块
-    //0\r\n\r\n
     if (buf.empty())
     {
       SendData("0\r\n\r\n");
@@ -418,6 +464,34 @@ public:
   //文件下载功能
   bool ProcessFile(RequestInfo& info)
   {
+    std::string rsp_header;
+    rsp_header = info._version + " 200 OK\r\n";
+    rsp_header += "Content-Type: " + _mime + "\r\n";
+    rsp_header += "Connection: close\r\n";
+    rsp_header += "Content-Length: " + _fsize + "\r\n";
+    rsp_header += "ETag: " + _etag + "\r\n";
+    rsp_header += "Last-Modified: " + _mtime + "\r\n";
+    rsp_header += "Date: " + _date + "\r\n\r\n";
+    SendData(rsp_header);
+
+    int fd = open(info._path_phys.c_str(), O_RDONLY);
+    if (fd < 0)
+    {
+      info._err_code = "400";
+      ErrHandler(info);
+      return false;
+    }
+    int rlen = 0;
+    char tmp[MAX_BUFF];
+    while ((rlen = read(fd, tmp, MAX_BUFF)) > 0)
+    {
+      //tmp[rlen] = '\0';
+      //发送文件数据的时候不能用string发送
+      //对端关闭连接，发送数据send就会收到SIGPIPE信号，默认处理就是终止进程
+      //SendData(tmp);
+      send(_cli_sock, tmp, rlen, 0);
+    }
+    close(fd);
     return true;
   }
   //文件列表功能
@@ -437,6 +511,7 @@ public:
     rsp_header += "Connection: close\r\n";
     if (info._version == "HTTP/1.1")
     {
+      //只有HTTP版本是1.1的时候才可以使用Transfer-Encoding：chunked进行传输
       rsp_header += "Transfer-Encoding: chunked\r\n";
     }
     rsp_header += "ETag: " + _etag + "\r\n";
@@ -446,23 +521,54 @@ public:
 
     std::string rsp_body;
     rsp_body = "<html><head>";
-    rsp_body += "<title>" + info._path_info + "</title>";
+    rsp_body += "<title>Index of" + info._path_info + "</title>";
     rsp_body += "<meta charset='UTF-8'>";
     rsp_body += "</head><body>";
-    rsp_body += "<h1>" + info._path_info + "</h1><hr />";
+    //<hr />是一个横线，<ol>是进行排序
+    rsp_body += "<h1>Index of" + info._path_info + "</h1>";
+    rsp_body += "<form action='/upload' method='POST' enctype='multipart/from-data'>";
+    rsp_body += "<input type='file' name='FileUpload' />";
+    rsp_body += "<input='submit' value='上传' />";
+    rsp_body += "</form>";
+    rsp_body += "<hr /><ol>";
     //测试，看组织的头部是否正确
     //std::cout << "\n\n" << rsp_body << "\n\n";
     SendCData(rsp_body);
-    while (1)
+    //发送每一个文件的数据
+    //scandir函数
+    //获取目录下的每一个文件，组织出html信息，chunk传输
+    struct dirent** p_dirent = NULL;
+    int num = scandir(info._path_phys.c_str(), &p_dirent, 0, alphasort);
+    for (int i = 0; i < num ; i++)
     {
-      //scandir函数
-      //获取目录下的每一个文件，组织出html信息，chunk传输
       std::string file_html;
-      file_html = "<li>" + info._path_info + "<strong>";
-      file_html += "</small>" + info._err_code +"</li>";
-    SendCData(file_html);
+      std::string file;
+      file += info._path_phys + p_dirent[i]->d_name;
+      struct stat st;
+      //获取文件信息
+      if (stat(file.c_str(), &st) < 0)
+      {
+        continue;
+      }
+      std::string mtime;
+      Utils::TimeToGmt(st.st_mtime, mtime);
+      std::string mime;
+      Utils::GetMime(p_dirent[i]->d_name, mime);
+      std::string fsize;
+      Utils::DigitToStr(st.st_size / 1024, fsize);
+      // 给这个页面加上了一个href+路径，一点击的话就会连接
+      file_html += "<li><strong><a href='"+ info._path_info;
+      file_html += p_dirent[i]->d_name;
+      file_html += "'>";
+      file_html += p_dirent[i]->d_name;
+      file_html += "</a></strong>";
+      file_html += "<br /><small>";
+      file_html += "modified: " + mtime + "<br />";
+      file_html += mime + " - " + fsize + "kbytes";
+      file_html += "<br /><br /><small></li>";
+      SendCData(file_html);
     }
-    rsp_body = "</body></html>";
+    rsp_body = "<ol><hr /></body></html>";
     SendCData(rsp_body);
     //进行分块发送的时候告诉已经发送完毕了，不用再让客户端进行一个等待正文的过程了
     SendCData("");
@@ -473,6 +579,105 @@ public:
   //cgi请求的处理
   bool ProcessCGI(RequestInfo& info)
   {
+    //使用外部程序完成cgi请求处理----文件上传
+    //将http头信息和正文全部交给子进程处理
+    //使用环境变量传递头信息
+    //使用管道传递正文数据
+    //使用管道接收cgi程序的处理结果
+    //流程：创建管道，创建子进程，设置子进程环境变量，程序替换
+    int in[2];//用于向子进程传递正文数据
+    int out[2];//用于从子进程中读取处理结果
+    if (pipe(in) || pipe(out))
+    {
+      info._err_code = "500";
+      ErrHandler(info);
+      return false;
+    }
+    int pid = fork();
+    if (pid < 0)
+    {
+      info._err_code = "500";
+      ErrHandler(info);
+      return false;
+    }
+    else if (pid == 0)
+    {
+      setenv("METHOD", info._method.c_str(), 1);
+      setenv("VERSION", info._version.c_str(), 1);
+      setenv("PATH_INFO", info._path_info.c_str(), 1);
+      setenv("QUERY_STRING", info._query_string.c_str(), 1);
+      for (auto it = info._hdr_list.begin(); it != info._hdr_list.end(); it++)
+      {
+        //将所有的头信息都放到环境变量中
+        setenv(it->first.c_str(), it->second.c_str(), 1);
+      }
+      close(in[1]);
+      close(out[0]);
+      //子进程将从标准输入读取正文数据
+      dup2(in[0], 0);
+      //子进程直接打印处理结果传递给父进程
+      dup2(out[1], 1);
+      //设置环境变量setenv和putenv
+      
+
+      execl(info._path_phys.c_str(), info._path_phys.c_str(), NULL);
+      exit(0);
+
+    }
+    close(in[0]);
+    close(out[1]);
+    //走下来就是父进程
+    //1.通过in管道将正文数据传递给子进程
+    auto it = info._hdr_list.find("Content-Length");
+    //没有找到Content-Length,不需要提交正文数据给子进程
+    if (it != info._hdr_list.end())
+    {
+      char buf[MAX_BUFF] = { 0 };
+      int64_t content_len = Utils::StrToDigit(it->second);
+      int rlen = recv(_cli_sock, buf, MAX_BUFF, 0);
+      if (rlen <= 0)
+      {
+        //响应错误给客户端
+        return false;
+      }
+      //子进程没有读取，直接写有可能管道满了，就会导致阻塞住
+      if (write(in[1], buf, rlen) < 0)
+      {
+        return false;
+      }
+    }
+    
+    //2.通过out管道读取子进程的处理结果直到返回0
+    //3.将处理结果组织http资源，响应给客户端
+    std::string rsp_header;
+    rsp_header = info._version + " 200 OK\r\n";
+    rsp_header += "Content-Type: " + _mime + "\r\n";
+    rsp_header += "Connection: close\r\n";
+    rsp_header += "ETag: " + _etag + "\r\n";
+    //rsp_header += "Content-Length: " + _fsize + "\r\n";
+    rsp_header += "Last-Modified: " + _mtime + "\r\n";
+    rsp_header += "Date: " + _date + "\r\n\r\n";
+    SendData(rsp_header);
+    
+    while (1)
+    {
+      char buf[MAX_BUFF] = { 0 };
+      int rlen = read(out[0], buf, MAX_BUFF);
+      if (rlen == 0)
+      {
+        break;
+      }
+      send(_cli_sock, buf, rlen, 0);
+    }
+
+    std::string rsp_body;
+    rsp_body = "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
+    SendData(rsp_body);
+
+    close(in[1]);
+    close(out[0]);
+    
+
     return true;
   }
 
@@ -498,10 +703,11 @@ public:
     Utils::DigitToStr(rsp_body.length(), cont_len);
     rsp_header += "Content-Length: " + cont_len + "\r\n\r\n";
   
-    std::cout << "\n\n\n\n";
-    std::cout << rsp_header << std::endl;
-    std::cout << rsp_body << std::endl;
-    std::cout << "\n\n\n\n";
+    //测试响应头和正文有没有组织完成
+    //std::cout << "\n\n\n\n";
+    //std::cout << rsp_header << std::endl;
+    //std::cout << rsp_body << std::endl;
+    //std::cout << "\n\n\n\n";
 
     //测试可以将网页发送过去
     //char ouput_buf[1024];
@@ -527,6 +733,16 @@ public:
   {
     if (info._st.st_mode & S_IFDIR)
     {
+      std::string path = info._path_info;
+      //if (path[path.length() - 1] != '/')
+      if (info._path_info.back() != '/')
+      {
+        info._path_info.push_back('/');
+      }
+      if (info._path_phys.back() != '/')
+      {
+        info._path_phys.push_back('/');
+      }
       return true;
     }
     return false;
