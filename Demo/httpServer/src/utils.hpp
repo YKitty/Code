@@ -425,7 +425,7 @@ public:
     Utils::TimeToGmt(t, _date);
     //fsize
     Utils::DigitToStr(req_info._st.st_size, _fsize);
-    Utils::GetMime(req_info._st.st_mode, _mime);
+    Utils::GetMime(req_info._path_phys, _mime);
     return true;
   }
 
