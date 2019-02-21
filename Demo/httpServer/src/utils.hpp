@@ -246,6 +246,7 @@ public:
 
       int hdr_len = ptr - tmp;
       _http_header.assign(tmp, hdr_len);
+      //从接收缓存区将所有的头部进行删除
       recv(_cli_sock, tmp, hdr_len + 4, 0);
       LOG("header:\n%s\n", _http_header.c_str());
       break;
@@ -470,11 +471,14 @@ public:
   //文件下载功能
   bool ProcessFile(RequestInfo& info)
   {
+    std::cout << "In ProcessFile" << std::endl;
     std::string rsp_header;
     rsp_header = info._version + " 200 OK\r\n";
     rsp_header += "Content-Type: " + _mime + "\r\n";
+    //?????????????????????????
     rsp_header += "Connection: close\r\n";
     rsp_header += "Content-Length: " + _fsize + "\r\n";
+    //????????????????????????
     rsp_header += "ETag: " + _etag + "\r\n";
     rsp_header += "Last-Modified: " + _mtime + "\r\n";
     rsp_header += "Date: " + _date + "\r\n\r\n";
@@ -516,13 +520,16 @@ public:
     //每一个目录下的文件都要输出一个html标签信息
     std::string rsp_header;
     rsp_header = info._version + " 200 OK\r\n";
+    //????????????????
     rsp_header += "Connection: close\r\n";
     if (info._version == "HTTP/1.1")
     {
       //只有HTTP版本是1.1的时候才可以使用Transfer-Encoding：chunked进行传输
       rsp_header += "Transfer-Encoding: chunked\r\n";
     }
+    //?????????????? 
     rsp_header += "ETag: " + _etag + "\r\n";
+    //?????????????????
     rsp_header += "Last-Modified: " + _mtime + "\r\n";
     rsp_header += "Date: " + _date + "\r\n\r\n";
     SendData(rsp_header);
