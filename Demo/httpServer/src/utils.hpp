@@ -531,10 +531,13 @@ public:
     rsp_body = "<html><head>";
     //这里是网页上面的标题
     rsp_body += "<title>YKittyServer" + info._path_info + "</title>";
+    //meta就是对于一个html页面中的元信息
     rsp_body += "<meta charset='UTF-8'>";
     rsp_body += "</head><body>";
     //<hr />是一个横线，
-    rsp_body += "<h1>YKitty" + info._path_info + "</h1>";
+    //rsp_body += "<h1>YKitty" + info._path_info + "</h1>";
+    rsp_body += "<h1>Welcome to my server";
+    rsp_body += "</h1>";
     //form表单为了出现上传按钮
     rsp_body += "<form action='/upload' method='POST' enctype='multipart/from-data'>";
     rsp_body += "<input type='file' name='FileUpload' />";
