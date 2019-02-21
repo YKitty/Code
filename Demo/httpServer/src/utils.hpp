@@ -530,7 +530,9 @@ public:
     std::string rsp_body;
     rsp_body = "<html><head>";
     //这里是网页上面的标题
-    rsp_body += "<title>YKittyServer" + info._path_info + "</title>";
+    //rsp_body += "<title>YKittyServer" + info._path_info + "</title>";
+    rsp_body += "<title>YKitty";
+    rsp_body += "</title>";
     //meta就是对于一个html页面中的元信息
     rsp_body += "<meta charset='UTF-8'>";
     rsp_body += "</head><body>";
@@ -569,7 +571,7 @@ public:
       std::string mime;
       Utils::GetMime(p_dirent[i]->d_name, mime);
       std::string fsize;
-      Utils::DigitToStrFsize(st.st_size / 1024.0, fsize);
+      Utils::DigitToStrFsize(st.st_size / 1024, fsize);
       // 给这个页面加上了一个href+路径，一点击的话就会连接
       file_html += "<li><strong><a href='"+ info._path_info;
       file_html += p_dirent[i]->d_name;
@@ -652,16 +654,19 @@ public:
       char buf[MAX_BUFF] = { 0 };
       int64_t content_len = Utils::StrToDigit(it->second);
       //循环读取正文，防止没有读完,直到读取正文大小等于Content-Length
-      int rlen = recv(_cli_sock, buf, MAX_BUFF, 0);
-      if (rlen <= 0)
+      int rlen = 0;
+      while ((rlen = recv(_cli_sock, buf, MAX_BUFF, 0) > 0))
       {
-        //响应错误给客户端
-        return false;
-      }
-      //子进程没有读取，直接写有可能管道满了，就会导致阻塞住
-      if (write(in[1], buf, rlen) < 0)
-      {
-        return false;
+        if (rlen <= 0)
+        {
+          //响应错误给客户端
+          return false;
+        }
+        //子进程没有读取，直接写有可能管道满了，就会导致阻塞住
+        if (write(in[1], buf, rlen) < 0)
+        {
+          return false;
+        }
       }
     }
     
