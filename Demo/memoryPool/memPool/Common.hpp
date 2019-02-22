@@ -4,7 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 
 #ifdef _WIN32
@@ -31,11 +31,15 @@ static inline void* SystemAlloc(size_t npage)
 	{
 		throw std::bad_alloc();
 	}
+
+	return ptr;
 #else 
+	//Linux下
+
 #endif //_WIN32
 }
 
-static inline void* SystemFree(void* ptr)
+static inline void SystemFree(void* ptr)
 {
 #ifdef _WIN32
 	//到这里也就是，PageCache里面也没有大于申请的npage的页，要去系统申请内存

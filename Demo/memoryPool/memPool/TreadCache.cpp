@@ -17,6 +17,7 @@ void* ThreadCache::FetchFromCentralCache(size_t index, size_t byte)
 	//单个对象越大，申请内存块的数量越小
 	size_t num_to_move = min(ClassSize::NumMoveSize(byte), freelist->MaxSize());
 
+
 	//这里不对_maxsize进行增加，每次申请的都是一样的内存块数量
 	//假如申请的是16byte的时候每次申请的时候都是申请1个内存块
 

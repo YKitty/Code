@@ -15,6 +15,8 @@ Span* PageCache::NewSpan(size_t npage)
 		span->_pageid = (PageID)ptr >> PAGE_SHIFT;
 		span->_npage = npage;
 		span->_objsize = npage << PAGE_SHIFT;
+
+		//这里只需要将申请的大的内存块的第一个页号插入进去就好了
 		_id_span_map[span->_pageid] = span;
 
 		return span;

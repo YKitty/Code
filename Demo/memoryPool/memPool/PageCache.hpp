@@ -33,5 +33,5 @@ private:
 	static PageCache _inst;
 
 	std::mutex _mtx;
-	std::map<PageID, Span*> _id_span_map;
+	std::unordered_map<PageID, Span*> _id_span_map;
 };
