@@ -21,6 +21,33 @@ const size_t PAGE_SHIFT = 12;
 //对于PageCache的最大可以存放NPAGES页
 const size_t NPAGES = 129;
 
+static inline void* SystemAlloc(size_t npage)
+{
+#ifdef _WIN32
+	//到这里也就是，PageCache里面也没有大于申请的npage的页，要去系统申请内存
+	//对于从系统申请内存，一次申请128页的内存，这样的话，提高效率，一次申请够不需要频繁申请
+	void* ptr = VirtualAlloc(NULL, (NPAGES - 1) << PAGE_SHIFT, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	if (ptr == nullptr)
+	{
+		throw std::bad_alloc();
+	}
+#else 
+#endif //_WIN32
+}
+
+static inline void* SystemFree(void* ptr)
+{
+#ifdef _WIN32
+	//到这里也就是，PageCache里面也没有大于申请的npage的页，要去系统申请内存
+	//对于从系统申请内存，一次申请128页的内存，这样的话，提高效率，一次申请够不需要频繁申请
+	VirtualFree(ptr, 0, MEM_RELEASE);
+	if (ptr == nullptr)
+	{
+		throw std::bad_alloc();
+	}
+#else 
+#endif //_WIN32
+}
 
 static inline void*& NEXT_OBJ(void* obj)
 {
@@ -104,7 +131,7 @@ struct Span
 	Span* _prev = nullptr;
 
 	void* _objlist = nullptr; //对象自由链表
-	size_t _objsize = 0;	//记录该span上的内存块的大小
+	size_t _objsize = 0;	//记录该span上的内存块的大小,作用：用来对于使用的时候计算，内存块的大小
 	size_t _usecount = 0; //使用计数，计算使用了多少内存块
 };
 
@@ -156,6 +183,17 @@ public:
 
 		prev->_next = next;
 		next->_prev = prev;
+	}
+
+	void PushBack(Span* cur)
+	{
+		Insert(end(), cur);
+	}
+
+	void PopBack()
+	{
+		Span* span = end();
+		Erase(span);
 	}
 
 	void PushFront(Span* cur)

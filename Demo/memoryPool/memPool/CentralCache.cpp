@@ -115,6 +115,13 @@ size_t CentralCache::FetchRangeObj(void*& start, void*& end, size_t num, size_t 
 	//给ThreadCache多少个内存块，这个span会使用计数，记录下来
 	span->_usecount += fetchnum;
 
+	//进行改进，每次将span中的内存块拿出来的时候，判断这个span中还有没有内存块，没有就放到最后
+	if (span->_objlist == nullptr)
+	{
+		spanlist->Erase(span);
+		spanlist->PushBack(span);
+	}
+
 	return fetchnum;
 }
 
@@ -131,6 +138,13 @@ void CentralCache::ReleaseListToSpans(void* start, size_t byte)
 	{
 		void* next = NEXT_OBJ(start);
 		Span* span = PageCache::GetInstance()->MapObjectToSpan(start);
+
+		//当一个span为空将一个span移到尾上
+		if (span->_objlist == nullptr)
+		{
+			spanlist->Erase(span);
+			spanlist->PushBack(span);
+		}
 
 		//将内存块采用头插的方式归还给CentralCache的span
 		NEXT_OBJ(start) = span->_objlist;

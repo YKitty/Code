@@ -31,4 +31,5 @@ private:
 
 //静态的tls变量，对于每一个ThreadCache对象都有着自己的一个tls_threadcache
 //产生了对于每一个线程都有自己的threadcache
+//_declspec(thread)相当于每一个线程都有一个线程
 static _declspec(thread) ThreadCache* tls_threadcache = nullptr;

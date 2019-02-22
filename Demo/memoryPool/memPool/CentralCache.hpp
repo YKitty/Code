@@ -36,5 +36,6 @@ private:
 	CentralCache(const CentralCache&)  = delete;
 	CentralCache& operator=(const CentralCache&)  = delete;
 
+	//创建一个对象
 	static CentralCache _inst;
 };

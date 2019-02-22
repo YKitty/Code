@@ -3,8 +3,32 @@
 //对于静态的成员变量必须在类外进行初始化
 PageCache PageCache::_inst;
 
-//从PageCache出拿取一个span用来给CentralCache
 Span* PageCache::NewSpan(size_t npage)
+{
+	//加锁，防止多个线程同时到PageCache中申请大于64k的内存
+	std::unique_lock<std::mutex> lock(_mtx);
+	if (npage >= NPAGES)
+	{
+		//申请的是大于64K的页的大小
+		void* ptr = SystemAlloc(npage);
+		Span* span = new Span();
+		span->_pageid = (PageID)ptr >> PAGE_SHIFT;
+		span->_npage = npage;
+		span->_objsize = npage << PAGE_SHIFT;
+		_id_span_map[span->_pageid] = span;
+
+		return span;
+	}
+
+	//从系统申请大于64K小于128页的内存的时候，需要将span的objsize进行一个设置为了释放的时候进行合并
+	Span* span = _NewSpan(npage);
+	//这个就是对于一个从PageCache申请span的时候，来记录申请这个span的所要分割的时候
+	span->_objsize = span->_npage << PAGE_SHIFT;
+	return span;
+}
+
+//从PageCache出拿取一个span用来给CentralCache
+Span* PageCache::_NewSpan(size_t npage)
 {
 	//如果对于page的span不为空，则直接返回一个span
 	if (!_pagelist[npage].Empty())
@@ -41,11 +65,7 @@ Span* PageCache::NewSpan(size_t npage)
 
 	//到这里也就是，PageCache里面也没有大于申请的npage的页，要去系统申请内存
 	//对于从系统申请内存，一次申请128页的内存，这样的话，提高效率，一次申请够不需要频繁申请
-	void* ptr = VirtualAlloc(NULL, (NPAGES - 1) << PAGE_SHIFT, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	if (ptr == nullptr)
-	{
-		throw std::bad_alloc();
-	}
+	void* ptr = SystemAlloc(npage);
 
 	Span* largespan = new Span();
 	largespan->_pageid = (PageID)(ptr) >> PAGE_SHIFT;
@@ -58,7 +78,7 @@ Span* PageCache::NewSpan(size_t npage)
 		_id_span_map[largespan->_pageid + i] = largespan;
 	}
 
-	return NewSpan(npage);
+	return _NewSpan(npage);
 }
 
 Span* PageCache::MapObjectToSpan(void* obj)
@@ -77,6 +97,18 @@ Span* PageCache::MapObjectToSpan(void* obj)
 //将CentralCache的span归还给PageCache
 void PageCache::RelaseToPageCache(Span* span)
 {
+	std::unique_lock<std::mutex> lock(_mtx);
+	//当释放的内存是大于128页
+	if (span->_npage >= NPAGES)
+	{
+		void* ptr = (void*)(span->_pageid << PAGE_SHIFT);
+		_id_span_map.erase(span->_pageid);
+		SystemFree(ptr);
+		delete span;
+
+		return;
+	}
+
 	//找到这个span前面的span
 	auto previt = _id_span_map.find(span->_pageid - 1);
 

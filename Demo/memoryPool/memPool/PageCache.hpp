@@ -14,6 +14,8 @@ public:
 	//从系统申请span或者大于要申请的npage的Pagespan中申请
 	Span* NewSpan(size_t npage);
 
+	Span* _NewSpan(size_t npage);
+
 	// 获取从对象到span的映射
 	Span* MapObjectToSpan(void* obj);
 
@@ -28,7 +30,8 @@ private:
 	PageCache() = default;
 	PageCache(const PageCache&) = delete;
 	PageCache& operator=(const PageCache&) = delete;
-
 	static PageCache _inst;
+
+	std::mutex _mtx;
 	std::map<PageID, Span*> _id_span_map;
 };
