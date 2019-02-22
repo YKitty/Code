@@ -116,6 +116,7 @@ size_t CentralCache::FetchRangeObj(void*& start, void*& end, size_t num, size_t 
 	span->_usecount += fetchnum;
 
 	//进行改进，每次将span中的内存块拿出来的时候，判断这个span中还有没有内存块，没有就放到最后
+	//这是因为每次从span中申请内存块的时候，有可能就会将这个span上的内存块申请完了
 	if (span->_objlist == nullptr)
 	{
 		spanlist->Erase(span);
@@ -139,7 +140,10 @@ void CentralCache::ReleaseListToSpans(void* start, size_t byte)
 		void* next = NEXT_OBJ(start);
 		Span* span = PageCache::GetInstance()->MapObjectToSpan(start);
 
-		//当一个span为空将一个span移到尾上
+		//当一个span为空将这个span移到span链表的尾部上
+		//因为我们每次从中心缓存获取内存块的时候，都会采用从头开始遍历来看哪一个span不为空
+		//从而到这个span中心获取内存，当我们将已经用光的span放到尾部的时候，再次需要内存的时候，
+		//就相当于直接从头部的span拿取内存块，将遍历这个span链表的最好的情况优化到了O(1)的时间复杂度
 		if (span->_objlist == nullptr)
 		{
 			spanlist->Erase(span);
