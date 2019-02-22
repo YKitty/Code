@@ -4,6 +4,7 @@
 
 #define MAX_LISTEN 5
 #define MAX_THREAD 5
+#define _IP_ 0
 
 //建立一个tcp服务器端程序，接收新连接
 //为新连接组织一个线程池任务，添加到新线程池中
@@ -73,9 +74,12 @@ public:
     sockaddr_in lst_addr;
     lst_addr.sin_family = AF_INET;
     lst_addr.sin_port = htons(atoi(port.c_str()));
+#if _IP_ 
     lst_addr.sin_addr.s_addr = inet_addr(ip.c_str());
+#else    
     //绑定这个局域网的所有地址
-    //lst_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    lst_addr.sin_addr.s_addr = INADDR_ANY;
+#endif
     socklen_t len = sizeof(sockaddr_in);
     if ((bind(_serv_sock, (sockaddr*)&lst_addr, len) < 0))
     {
@@ -130,22 +134,39 @@ public:
 
 void Usage(const std::string proc)
 {
+#if _IP_ 
   std::cout << "Usage: " << proc << " ip port" << std::endl;
+#else 
+  std::cout << "Usage: " << proc << " port" << std::endl;
+#endif 
 }
 
 int main(int argc, char* argv[])
 {
+#if _IP_ 
   if (argc != 3)
   {
     Usage(argv[0]);
     exit(1);
   }
-  signal(SIGPIPE, SIG_IGN);
   HttpServer server;
   if (server.HttpServerInit(argv[1], argv[2]) == false)
   {
     return -1;
   }
+#else 
+  if (argc != 2)
+  {
+    Usage(argv[0]);
+    exit(1);
+  }
+  HttpServer server;
+  if (server.HttpServerInit(argv[0], argv[1]) == false)
+  {
+    return -1;
+  }
+#endif 
+  signal(SIGPIPE, SIG_IGN);
   if (server.Start() == false)
   {
     return -1;

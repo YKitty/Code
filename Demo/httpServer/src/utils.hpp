@@ -5,6 +5,7 @@
 #include <string.h>
 #include <time.h>
 #include <dirent.h>
+#include <sys/wait.h>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -258,20 +259,16 @@ public:
   //判断地址是否合法,并且将相对路径信息转换为绝对路径信息
   bool PathIsLegal(std::string& path, RequestInfo &info)
   {
+    //GET / HTTP/1.1
+    //file = www/ 
     std::string file = WWWROOT + path;
     
     //测试文件路径是否正确
     //std::cout << file << "\n\n\n\n\n\n";
     
-    //文件不存在
-    if (stat(file.c_str(), &(info._st)) < 0)
-    {
-      info._err_code = "404";
-      return false;
-    }
-    
     //文件存在的话，就会将相对路径转化为绝对路径
     char tmp[MAX_PATH] = { 0 };
+    //使用realpath函数将一个虚拟路径转化为物理路径的时候，就自动吧最后面的一个/去掉
     realpath(file.c_str(), tmp);
 
     info._path_phys = tmp;
@@ -280,6 +277,14 @@ public:
     if (info._path_phys.find(WWWROOT) == std::string ::npos)
     {
       info._err_code = "403";
+      return false;
+    }
+
+    //stat函数，通过路径获取文件信息
+    //stat函数需要物理路径获取文件的信息，而不是需要相对路径
+    if (stat(info._path_phys.c_str(), &(info._st)) < 0)
+    {
+      info._err_code = "404";
       return false;
     }
     return true;
@@ -496,10 +501,12 @@ public:
     //??????????
     while ((rlen = read(fd, tmp, MAX_BUFF)) > 0)
     {
-      //tmp[rlen] = '\0';
+      //使用这样子发送的话就会导致，服务器挂掉
+      //不能这样子发送，如果这样子发送的话就有可能
+      //tmp[rlen + 1] = '\0';
+      //SendData(tmp);
       //发送文件数据的时候不能用string发送
       //对端关闭连接，发送数据send就会收到SIGPIPE信号，默认处理就是终止进程
-      //SendData(tmp);
       send(_cli_sock, tmp, rlen, 0);
     }
     close(fd);
@@ -579,10 +586,14 @@ public:
       Utils::GetMime(p_dirent[i]->d_name, mime);
       std::string fsize;
       Utils::DigitToStrFsize(st.st_size / 1024, fsize);
-      // 给这个页面加上了一个href+路径，一点击的话就会连接
+      //给这个页面加上了一个href+路径，一点击的话就会连接，进入到一个文件或者目录之后会给这个文件或者目录的网页地址前面加上路径
+      //比如，列表的时候访问根目录下的所有文件
+      //_path_info就变成了-- /. -- /.. -- /hello.dat -- /html -- /test.txt
+      //然后在网页中点击的时候，就不会发送请求报文，直接根据这个网页路径来进行跳转网页，这就是网页缓存
       file_html += "<li><strong><a href='"+ info._path_info;
       file_html += p_dirent[i]->d_name;
       file_html += "'>";
+      //打印名字 
       file_html += p_dirent[i]->d_name;
       file_html += "</a></strong>";
       file_html += "<br /><small>";
@@ -602,6 +613,7 @@ public:
   //cgi请求的处理
   bool ProcessCGI(RequestInfo& info)
   {
+    std::cout << "In ProcessCGI" << std::endl;
     //使用外部程序完成cgi请求处理----文件上传
     //将http头信息和正文全部交给子进程处理
     //使用环境变量传递头信息
@@ -640,71 +652,82 @@ public:
       close(in[1]);//关闭写
       close(out[0]);//关闭读
       //子进程将从标准输入读取正文数据
-      dup2(in[0], 0);
+      //dup2(in[0], 0);
       //子进程直接打印处理结果传递给父进程
       //子进程将数据输出到标准输出
-      dup2(out[1], 1);
+      //dup2(out[1], 1);
       
       //进行程序替换，第一个参数表示要执行的文件的路径，第二个参数表示如何执行这个二进制程序
       execl(info._path_phys.c_str(), info._path_phys.c_str(), NULL);
       exit(0);
 
     }
+    wait(NULL);
     close(in[0]);
     close(out[1]);
     //走下来就是父进程
     //1.通过in管道将正文数据传递给子进程
     auto it = info._hdr_list.find("Content-Length");
     //没有找到Content-Length,不需要提交正文数据给子进程
-    if (it != info._hdr_list.end())
-    {
-      char buf[MAX_BUFF] = { 0 };
-      int64_t content_len = Utils::StrToDigit(it->second);
-      //循环读取正文，防止没有读完,直到读取正文大小等于Content-Length
-      int rlen = 0;
-      while ((rlen = recv(_cli_sock, buf, MAX_BUFF, 0) > 0))
-      {
-        if (rlen <= 0)
-        {
-          //响应错误给客户端
-          return false;
-        }
-        //子进程没有读取，直接写有可能管道满了，就会导致阻塞住
-        if (write(in[1], buf, rlen) < 0)
-        {
-          return false;
-        }
-      }
-    }
+    
+
+    //到这里就是http请求头中有着Content-Length这个字段,也就是说明需要父进程需要将bady数据传输给子进程
+    //if (it != info._hdr_list.end())
+    //{
+    //  char buf[MAX_BUFF] = { 0 };
+    //  int64_t content_len = Utils::StrToDigit(it->second);
+    //  //循环读取正文，防止没有读完,直到读取正文大小等于Content-Length
+    //  int rlen = 0;
+    //  while ((rlen = recv(_cli_sock, buf, MAX_BUFF, 0) > 0))
+    //  {
+    //    if (rlen <= 0)
+    //    {
+    //      //响应错误给客户端
+    //      return false;
+    //    }
+    //    //子进程没有读取，直接写有可能管道满了，就会导致阻塞住
+    //    if (write(in[1], buf, rlen) < 0)
+    //    {
+    //      return false;
+    //    }
+    //  }
+    //}
     
     //2.通过out管道读取子进程的处理结果直到返回0
     //3.将处理结果组织http资源，响应给客户端
     std::string rsp_header;
     rsp_header = info._version + " 200 OK\r\n";
-    rsp_header += "Content-Type: " + _mime + "\r\n";
+    rsp_header += "Content-Type: ";
+    rsp_header += "text/plain";
+    rsp_header += "\r\n";
     rsp_header += "Connection: close\r\n";
     rsp_header += "ETag: " + _etag + "\r\n";
     //rsp_header += "Content-Length: " + _fsize + "\r\n";
     rsp_header += "Last-Modified: " + _mtime + "\r\n";
     rsp_header += "Date: " + _date + "\r\n\r\n";
-    SendData(rsp_header);
+    //SendData(rsp_header);
     
-    while (1)
-    {
-      char buf[MAX_BUFF] = { 0 };
-      int rlen = read(out[0], buf, MAX_BUFF);
-      if (rlen == 0)
-      {
-        break;
-      }
-      //读取子进程的处理结果并且发送给浏览器
-      send(_cli_sock, buf, rlen, 0);
-    }
+    std::cout << "In ProcessCGI:rsp_header\n" << rsp_header << std::endl;
+
+    //while (1)
+    //{
+    //  char buf[MAX_BUFF] = { 0 };
+    //  int rlen = read(out[0], buf, MAX_BUFF);
+    //  if (rlen == 0)
+    //  {
+    //    break;
+    //  }
+    //  //读取子进程的处理结果并且发送给浏览器
+    //  send(_cli_sock, buf, rlen, 0);
+    //}
 
 
     std::string rsp_body;
-    rsp_body = "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
-    SendData(rsp_body);
+    //rsp_body = "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
+    //SendData(rsp_body);
+    rsp_header += "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
+    SendData(rsp_header);
+    std::cout << "In ProcessCGI:rsp_body\n" << rsp_body << std::endl;
     close(in[1]);
     close(out[0]);
     
