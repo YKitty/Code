@@ -36,6 +36,7 @@ std::unordered_map<std::string, std::string> g_mime_type = {
   {"html", "text/html"},
   {"htm", "text/html"},
   {"jpg", "image/jpeg"},
+  {"gif", "image/gif"},
   {"zip", "application/zip"},
   {"mp3", "audio/mpeg"},
   {"mpeg", "video/mpeg"},
@@ -117,7 +118,7 @@ public:
     str = ss.str();
   }
 
-  static int64_t StrToDigit(std::string& str)
+  static int64_t StrToDigit(const std::string& str)
   {
     int64_t num;
     std::stringstream ss;
@@ -502,7 +503,9 @@ public:
     while ((rlen = read(fd, tmp, MAX_BUFF)) > 0)
     {
       //使用这样子发送的话就会导致，服务器挂掉
-      //不能这样子发送，如果这样子发送的话就有可能
+      //不能这样子发送，如果这样子发送的话，就是将数据转化为string类型的了
+      //如果文本中存在\0的话，就会导致每次发送的数据没有发送完毕
+      //有这样的一种情况，文本中的数据都是\0那么就会在第一次发送过去的时候，发送0个数据
       //tmp[rlen + 1] = '\0';
       //SendData(tmp);
       //发送文件数据的时候不能用string发送
@@ -554,8 +557,10 @@ public:
     //rsp_body += "<h1>YKitty" + info._path_info + "</h1>";
     rsp_body += "<h1>Welcome to my server";
     rsp_body += "</h1>";
-    //form表单为了出现上传按钮
+    //form表单为了出现上传按钮,请求的资源是action,请求的方法是POST
     rsp_body += "<form action='/upload' method='POST' enctype='multipart/from-data'>";
+    //测试想要上传两个文件
+    rsp_body += "<input type='file' name='FileUpload' />";
     rsp_body += "<input type='file' name='FileUpload' />";
     rsp_body += "<input type='submit' value='上传' />";
     rsp_body += "</form>";
@@ -589,7 +594,9 @@ public:
       //给这个页面加上了一个href+路径，一点击的话就会连接，进入到一个文件或者目录之后会给这个文件或者目录的网页地址前面加上路径
       //比如，列表的时候访问根目录下的所有文件
       //_path_info就变成了-- /. -- /.. -- /hello.dat -- /html -- /test.txt
-      //然后在网页中点击的时候，就不会发送请求报文，直接根据这个网页路径来进行跳转网页，这就是网页缓存
+      //然后在网页中点击的时候，向服务器发送请求报文
+      //请求的路径:[info._path_info/文件名],然后服务器返回一个html页面，对于多次的话，网页会进行缓存有的时候就会直接进行跳转，不在向服务器发送http请求
+      //直接根据这个网页路径来进行跳转网页，这就是网页缓存
       file_html += "<li><strong><a href='"+ info._path_info;
       file_html += p_dirent[i]->d_name;
       file_html += "'>";
@@ -652,17 +659,17 @@ public:
       close(in[1]);//关闭写
       close(out[0]);//关闭读
       //子进程将从标准输入读取正文数据
-      //dup2(in[0], 0);
+      dup2(in[0], 0);
       //子进程直接打印处理结果传递给父进程
       //子进程将数据输出到标准输出
-      //dup2(out[1], 1);
+      dup2(out[1], 1);
       
       //进行程序替换，第一个参数表示要执行的文件的路径，第二个参数表示如何执行这个二进制程序
+      //程序替换之后，原先该进程的数据全部都发生了改变
       execl(info._path_phys.c_str(), info._path_phys.c_str(), NULL);
       exit(0);
 
     }
-    wait(NULL);
     close(in[0]);
     close(out[1]);
     //走下来就是父进程
@@ -672,33 +679,38 @@ public:
     
 
     //到这里就是http请求头中有着Content-Length这个字段,也就是说明需要父进程需要将bady数据传输给子进程
-    //if (it != info._hdr_list.end())
-    //{
-    //  char buf[MAX_BUFF] = { 0 };
-    //  int64_t content_len = Utils::StrToDigit(it->second);
-    //  //循环读取正文，防止没有读完,直到读取正文大小等于Content-Length
-    //  int rlen = 0;
-    //  while ((rlen = recv(_cli_sock, buf, MAX_BUFF, 0) > 0))
-    //  {
-    //    if (rlen <= 0)
-    //    {
-    //      //响应错误给客户端
-    //      return false;
-    //    }
-    //    //子进程没有读取，直接写有可能管道满了，就会导致阻塞住
-    //    if (write(in[1], buf, rlen) < 0)
-    //    {
-    //      return false;
-    //    }
-    //  }
-    //}
+    if (it != info._hdr_list.end())
+    {
+      char buf[MAX_BUFF] = { 0 };
+      int64_t content_len = Utils::StrToDigit(it->second);
+      //循环读取正文，防止没有读完,直到读取正文大小等于Content-Length
+      
+      int tlen = 0;
+      while (tlen < content_len)
+      {
+        //防止粘包
+        int len = MAX_BUFF > (content_len - tlen) ? (content_len - tlen) : MAX_BUFF;
+        int rlen = recv(_cli_sock, buf, len, 0);
+        if (rlen <= 0)
+        {
+          //响应错误给客户端
+          return false;
+        }
+        //子进程没有读取，直接写有可能管道满了，就会导致阻塞着
+        if (write(in[1], buf, rlen) < 0)
+        {
+          return false;
+        }
+        tlen += rlen;
+      }
+    }
     
     //2.通过out管道读取子进程的处理结果直到返回0
     //3.将处理结果组织http资源，响应给客户端
     std::string rsp_header;
     rsp_header = info._version + " 200 OK\r\n";
     rsp_header += "Content-Type: ";
-    rsp_header += "text/plain";
+    rsp_header += "text/html";
     rsp_header += "\r\n";
     rsp_header += "Connection: close\r\n";
     rsp_header += "ETag: " + _etag + "\r\n";
@@ -723,10 +735,10 @@ public:
 
 
     std::string rsp_body;
-    //rsp_body = "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
-    //SendData(rsp_body);
-    rsp_header += "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
-    SendData(rsp_header);
+    rsp_body = "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
+    SendData(rsp_body);
+    //rsp_header += "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
+    //SendData(rsp_header);
     std::cout << "In ProcessCGI:rsp_body\n" << rsp_body << std::endl;
     close(in[1]);
     close(out[0]);
