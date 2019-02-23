@@ -32,7 +32,7 @@
 
 //文件类型的映射
 std::unordered_map<std::string, std::string> g_mime_type = {
-  {"txt", "text/plain"},
+  {"txt", "application/octet-steam"},
   {"html", "text/html"},
   {"htm", "text/html"},
   {"jpg", "image/jpeg"},
