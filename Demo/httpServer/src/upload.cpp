@@ -111,10 +111,12 @@ private:
     }
     //从文件名后面的"删除到结尾
     file_name.erase(pos);
+    //如果直接使用WWWROOT进行拼接获取文件所在路径和名字的时候这个时候就会每次上传的文件都在www目录下，不会发生改变
+    //所以要使用实际路径在加上文件名就好了
     _file_name = WWWROOT;
     _file_name += "/";
     _file_name += file_name;
-    fprintf(stderr, "upload file:[%s]\n", _file_name.c_str());
+    fprintf(stderr, "upload file:\n[%s]\n", _file_name.c_str());
     return true;
   }
 
@@ -189,16 +191,15 @@ public:
     _m_boundary = "\r\n" + _f_boundary + "\r\n";
     _l_boundary = "\r\n" + _f_boundary + "--";
     
-    std::cerr << "_f_boundary->[" << _f_boundary << "]" << std::endl;
-    std::cerr << "_m_boundary->[" << _m_boundary << "]" << std::endl;
-    std::cerr << "_l_boundary->[" << _l_boundary << "]" << std::endl;
     return true;
   }
 
   //对正文进行处理，将文件数据进行存储(处理文件上传)
+  //只有是获取到完整的middle分隔符或者是last分隔符才可以关闭文件，否则就不可以关闭文件
+  //对于每一个if都要进行查找一次分隔符，这是为了一次要将从管道中得到的数据一次性进行便利完
   bool ProcessUpload()
   {
-    //tlen : 当前读取的长度
+    //tlen : 当前已经读取的长度
     //blen : buffer长度
     int64_t tlen = 0, blen = 0;
     char buf[MAX_BUFF];
@@ -206,8 +207,7 @@ public:
     {
       //从管道中将数据读取出来
       int len = read(0, buf + blen, MAX_BUFF - blen);
-      CreateFile();
-      fprintf(stderr, "buf:[%s]", buf);
+      fprintf(stderr, "直接从buf中读出来:[%s]", buf);
       blen += len;//当前buff中数据的长度
       int boundary_pos;//分隔符的下标
       int content_pos;// 文件名的开始下标
@@ -215,28 +215,35 @@ public:
       int flag = MatchBoundry(buf, blen, &boundary_pos);
       if (flag == BOUNDRY_FIRST)
       {
+        fprintf(stderr, "[In BOUNDRY_FIRST\n]");
         //匹配到开始的boundary
         //1.从boundary头中获取文件名
         //2.若获取文件名成功，则创建文件，打开文件
         //3.将文件信息从buf中移除，剩下的数据进行下一步匹配
         if (GetFileName(buf, &content_pos))
         {
+          fprintf(stderr, "[filename:%s]", _file_name.c_str());
           CreateFile();
           //buf里面数据的长度剪短
           blen -= content_pos;
-          //匹配到了就把内容去除
-          memmove(buf, buf + content_pos, blen - content_pos);
+          //匹配到了就把内容去除,将从数据内容到结尾的数据全部向前移动覆盖前面的数据，第三个参数是blen，因为blen在前面已经减过了
+          memmove(buf, buf + content_pos, blen);
+          memset(buf + blen, 0, content_pos);
+          fprintf(stderr, "[In BOUNDRY_FIRST去除分隔符和内容->buf:%s]", buf);
         }
         else 
         {
           //有可能不是上传文件，没有filename所以匹配到了_f_boundary也要将其去掉
-          //没有匹配成功就把boundary去除
-          blen -= (_f_boundary.length());
-          memmove(buf, buf + _f_boundary.length(), blen);
+          //没有匹配成功就把boundary分隔符的内容去除，因为此时的content_pos的位置没有找到呢
+          blen -= boundary_pos;
+          memmove(buf, buf + boundary_pos, blen);
+          memset(buf + blen, 0, boundary_pos);
+          fprintf(stderr, "[In BOUNDRY_FIRST只是去除分隔符->buf:%s]", buf);
         }
       }
       while (1)
       {
+        //没有匹配到middle分隔符，就跳出循环  
         flag = MatchBoundry(buf, blen, &boundary_pos);
         if (flag != BOUNDRY_MIDDLE)
         {
@@ -246,31 +253,35 @@ public:
         //1.将boundary之前的数据写入文件，将数据从buf中移除
         //2.关闭文件
         //3.看middle_boundary是否有文件名--剩下的流程都是一样的和first_boundary
-        WriteFile(buf, boundary_pos);
+        WriteFile(buf, boundary_pos);//如果有文件打开就进行写入，没有就不进行写入直接将数据去除
         CloseFile();
         //将文件数据除去
         blen -= boundary_pos;
         memmove(buf, buf + boundary_pos, blen);
+        memset(buf + blen, 0, boundary_pos);
+        fprintf(stderr, "[In BOUNDRY_MIDDLE只是去除middle分隔符->buf:%s]", buf);
         if (GetFileName(buf, &content_pos))
         {
           CreateFile();
-          //将内容头部进行删除
+          //将内容以及middle分隔符头部进行删除
           blen -= content_pos;
-          //匹配到了就把内容去除
+          //匹配到了就把内容和middle分隔符去除
           memmove(buf, buf + content_pos, blen);
+          memset(buf + blen, 0, content_pos);
         }
         else 
         {
-          //头信息不全跳出循环,没找到\r\n\r\n
+          //此时遇到的这个middle分隔符，后面的数据不是为了上传文件
+          //头信息不全跳出循环,没找到\r\n\r\n，等待再次从缓存区中拿取数据，再次循环进来进行判断
           if (content_pos == 0)
           {
             break;
           }
           //没有找到名字或者名字后面的"
-          //没有匹配成功就把boundary去除
-          //防止下次进入再找这一个boundary
-          blen -= (_m_boundary.length());
-          memmove(buf, buf + _f_boundary.length(), blen);
+          //没有匹配成功就把boundary去除,防止下次进入再找这一个boundary
+          blen -= _m_boundary.length();
+          memmove(buf, buf + _m_boundary.length(), blen);
+          memset(buf + blen, 0, _m_boundary.length());
         }
       }
       flag = MatchBoundry(buf, blen, &boundary_pos);
@@ -292,13 +303,14 @@ public:
         //3.剩下的数据不动，重新继续接收数据，补全后匹配
         WriteFile(buf, boundary_pos);
         blen -= boundary_pos;
-        memmove(buf, buf + content_pos, blen);
+        memmove(buf, buf + boundary_pos, blen);
+        memset(buf + blen, 0, boundary_pos);
       }
       flag = MatchBoundry(buf, blen, &boundary_pos);
       if (flag == BOUNDRY_NO)
       {
         //将所有数据写入文件
-        WriteFile(buf, boundary_pos);
+        WriteFile(buf, blen);
         blen = 0;
       }
 
@@ -326,6 +338,7 @@ int main()
   {
     rsp_body = "<html><body><h1>SUCCESS</h1></body></html>";
   }
+  //将数据写到标准输出，就会写到管道中
   std::cout << rsp_body;
   fflush(stdout);
   return 0;

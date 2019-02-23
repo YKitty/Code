@@ -620,7 +620,7 @@ public:
   //cgi请求的处理
   bool ProcessCGI(RequestInfo& info)
   {
-    std::cout << "In ProcessCGI" << std::endl;
+    std::cout << "PHYS PATH" << info._path_phys << std::endl;
     //使用外部程序完成cgi请求处理----文件上传
     //将http头信息和正文全部交给子进程处理
     //使用环境变量传递头信息
