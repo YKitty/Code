@@ -558,9 +558,9 @@ public:
     rsp_body += "<h1>Welcome to my server";
     rsp_body += "</h1>";
     //form表单为了出现上传按钮,请求的资源是action,请求的方法是POST
-    rsp_body += "<form action='/upload' method='POST' enctype='multipart/from-data'>";
+    rsp_body += "<form action='/upload' method='POST' enctype='multipart/form-data'>";
     //测试想要上传两个文件
-    rsp_body += "<input type='file' name='FileUpload' />";
+    //rsp_body += "<input type='file' name='FileUpload' />";
     rsp_body += "<input type='file' name='FileUpload' />";
     rsp_body += "<input type='submit' value='上传' />";
     rsp_body += "</form>";
@@ -654,7 +654,10 @@ public:
       {
         //将所有的头信息都放到环境变量中
         setenv(it->first.c_str(), it->second.c_str(), 1);
+        //std::cout << it->first.c_str() << "--" << it->second.c_str() << std::endl;
       }
+
+
       
       close(in[1]);//关闭写
       close(out[0]);//关闭读
@@ -677,14 +680,13 @@ public:
     auto it = info._hdr_list.find("Content-Length");
     //没有找到Content-Length,不需要提交正文数据给子进程
     
-
     //到这里就是http请求头中有着Content-Length这个字段,也就是说明需要父进程需要将bady数据传输给子进程
     if (it != info._hdr_list.end())
     {
       char buf[MAX_BUFF] = { 0 };
       int64_t content_len = Utils::StrToDigit(it->second);
       //循环读取正文，防止没有读完,直到读取正文大小等于Content-Length
-      
+      //tlen就是当前读取的长度
       int tlen = 0;
       while (tlen < content_len)
       {
@@ -717,34 +719,35 @@ public:
     //rsp_header += "Content-Length: " + _fsize + "\r\n";
     rsp_header += "Last-Modified: " + _mtime + "\r\n";
     rsp_header += "Date: " + _date + "\r\n\r\n";
-    //SendData(rsp_header);
+    SendData(rsp_header);
     
-    std::cout << "In ProcessCGI:rsp_header\n" << rsp_header << std::endl;
+    //std::cout << "In ProcessCGI:rsp_header\n" << rsp_header << std::endl;
 
-    //while (1)
-    //{
-    //  char buf[MAX_BUFF] = { 0 };
-    //  int rlen = read(out[0], buf, MAX_BUFF);
-    //  if (rlen == 0)
-    //  {
-    //    break;
-    //  }
-    //  //读取子进程的处理结果并且发送给浏览器
-    //  send(_cli_sock, buf, rlen, 0);
-    //}
+    while (1)
+    {
+      char buf[MAX_BUFF] = { 0 };
+      int rlen = read(out[0], buf, MAX_BUFF);
+      if (rlen == 0)
+      {
+        break;
+      }
+      //读取子进程的处理结果并且发送给浏览器
+      send(_cli_sock, buf, rlen, 0);
+    }
 
 
-    std::string rsp_body;
-    rsp_body = "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
-    SendData(rsp_body);
+    //std::string rsp_body;
+    //rsp_body = "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
+    //SendData(rsp_body);
     //rsp_header += "<html><body><h1>UPLOAD SUCCESS!</h1></body></html>";
     //SendData(rsp_header);
-    std::cout << "In ProcessCGI:rsp_body\n" << rsp_body << std::endl;
+    //std::cout << "In ProcessCGI:rsp_body\n" << rsp_body << std::endl;
     close(in[1]);
     close(out[0]);
     
 
     return true;
+
   }
 
   //处理出错响应
