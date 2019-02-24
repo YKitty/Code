@@ -560,7 +560,7 @@ public:
     //form表单为了出现上传按钮,请求的资源是action,请求的方法是POST
     rsp_body += "<form action='/upload' method='POST' enctype='multipart/form-data'>";
     //测试想要上传两个文件
-    //rsp_body += "<input type='file' name='FileUpload' />";
+    rsp_body += "<input type='file' name='FileUpload' />";
     rsp_body += "<input type='file' name='FileUpload' />";
     rsp_body += "<input type='submit' value='上传' />";
     rsp_body += "</form>";
