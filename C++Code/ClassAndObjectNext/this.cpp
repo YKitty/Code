@@ -10,6 +10,14 @@ public:
     std::cout << "In A()" << std::endl;
   }
 
+  A(const A& a)
+  {
+    std::cout << "In A(const A&)" << std::endl;
+    _num = a._num;
+    //对于this不可赋值说明对于this，是一个const类型的变量;
+    //this = &a;
+  }
+
   ~A()
   {
     std::cout << "In ~A()" << std::endl;
@@ -32,6 +40,7 @@ private:
 int main()
 {
   A a;
+  A b(a);
   fprintf(stdout, "a address:%p\n", &a);
   a.Print();
   a.Show();
