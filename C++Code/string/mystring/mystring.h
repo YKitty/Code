@@ -42,6 +42,7 @@ namespace MyString
     //  //不是自己给自己赋值
     //  if (this != &str)
     //  {
+    //    //释放这个对象所指向的内存空间
     //    delete[] _str;
     //    _str = new char[strlen(str._str) + 1];
     //    strcpy(_str, str._str);
