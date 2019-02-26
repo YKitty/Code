@@ -26,6 +26,8 @@ public:
   void Print()
   {
     fprintf(stdout, "this: %p\n", this);
+    //将会出错，this指针可以为空，但是当this指针为空的时候，在这个成员函数中就不可以使用this指针来进行成员变量的访问
+    std::cout << _num << std::endl;
   }
   
   static void Show()
@@ -39,11 +41,14 @@ private:
 
 int main()
 {
-  A a;
-  A b(a);
-  fprintf(stdout, "a address:%p\n", &a);
-  a.Print();
-  a.Show();
+  A* p = NULL;
+  p->Print();
+  p->Show();
+  //A a;
+  //A b(a);
+  //fprintf(stdout, "a address:%p\n", &a);
+  //a.Print();
+  //a.Show();
   return 0;
 }
 //可以看到this指针就是对象的地址，所以this指针只是在传递的时候，隐式的将对象的地址传给成员函数的第一个参数this
