@@ -58,6 +58,20 @@ public:
     : _serv_sock(-1)
     , _tp(NULL)
   {}
+  
+  ~HttpServer()
+  {
+    if (_serv_sock != -1)
+    {
+      close(_serv_sock);
+      _serv_sock = -1;
+    }
+    if (_tp)
+    {
+      delete _tp;
+      _tp = NULL;
+    }
+  }
 
   //tcp服务器socket的初始化，以及线程的初始化
   bool HttpServerInit(std::string ip, std::string port)
@@ -127,7 +141,8 @@ public:
         ht.SetHttpTask(new_sock, HttpHandler);
         _tp->PushTask(ht);
       }
-
+      //失败就退出线程池
+      _tp->ThreadPoolStop();
       return true;
   }
 };

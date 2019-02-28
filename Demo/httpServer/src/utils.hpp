@@ -45,10 +45,17 @@ std::unordered_map<std::string, std::string> g_mime_type = {
 
 std::unordered_map<std::string, std::string> g_err_desc = {
   {"200", "OK"},
-  {"400", "uthorized"},
+  {"206", "Partial Content"},
+  {"302", "Found"},
+  {"304", "Not Modified"},
+  {"400", "Bad Request"},
   {"403", "Forbidden"},
   {"404", "Not Found"},
   {"405", "Method Not Allowed"},
+  {"412", "Precondition Failed"},
+  {"414", "Request-URI Too Large"},
+  {"416", "Requested range not satisfiable"},
+  {"500", "Internal Server Error"},
 };
 
 class Utils 
@@ -102,6 +109,19 @@ public:
     int len;
     len = strftime(tmp, 127, "%a, %d %b %Y %H:%M:%S GMT", mt);
     gmt.assign(tmp, len);
+  }
+
+  //将一个时间格式转化为一个时间戳
+  static int64_t GmtToTime(const std::string& str)
+  {
+    struct tm gmt;
+    if (strptime(str.c_str(), "%a, %d %b %Y %H:%M:%S %Z", &gmt) == NULL)
+    {
+      LOG("Parse GMT To Time Error!\n");
+      return 0;
+    }
+
+    return timegm(&gmt);
   }
 
   static void DigitToStr(int64_t num, std::string& str)
@@ -408,6 +428,9 @@ class HttpResponse
 {
 private:
   int _cli_sock;
+  bool _is_range;
+  int64_t _cont_len;
+  std::string _version;
   //表明这个文件是否是源文件，是否修改过
   //Etag: "inode-fsize-mtime"\r\n
   std::string _etag;
@@ -419,6 +442,8 @@ private:
   std::string _fsize;
   //文件类型
   std::string _mime;
+  //分块传输，各个块区域
+  std::unordered_map<int64_t, int64_t> _range_list;
 public:
   HttpResponse(int sock)
     : _cli_sock(sock)
@@ -438,6 +463,16 @@ public:
     Utils::DigitToStr(req_info._st.st_size, _fsize);
     //_mime : 文件类型
     Utils::GetMime(req_info._path_phys, _mime);
+    auto it = req_info._hdr_list.find("Content-Length");
+    if (it != req_info._hdr_list.end())
+    {
+      _cont_len = Utils::StrToDigit(it->second);
+    }
+    else 
+    {
+      _cont_len = 0;
+    }
+    _version = req_info._version;
     return true;
   }
 
@@ -473,46 +508,211 @@ public:
 
     return true;
   }
+  
+  //将新的文件请求的文件和以前的文件进行对比，看是否修改过
+  //304表示，浏览器不需要请求直接读取自己的缓存就好了，服务器的这个文件没有修改
+  bool FileIfModefiedSince(RequestInfo& info)
+  {
+    auto it = info._hdr_list.find("If-Modefied-Since");
+    if (it != info._hdr_list.end() && (Utils::GmtToTime(it->second) >= Utils::GmtToTime(_mtime)))
+    {
+      info._err_code = "304";
+      return false;
+    }
+
+    return true;
+  }
+  
+  bool FileIfMatch(RequestInfo& info)
+  {
+
+      //资源的etag若与给定的etag不匹配，则响应412；否则响应200
+      auto it = info._hdr_list.find("If-Match");
+      if ((it != info._hdr_list.end()) && (it->second != _mtime)) {
+          info._err_code = "412";
+          return false;
+      }
+      return true;
+  }
+  bool FileIfNoneMatch(RequestInfo& info)
+  {
+    auto it = info._hdr_list.find("If-None-Match");
+    if (it != info._hdr_list.end())
+    {
+      if (it->second == _etag)
+      {
+        if (info._method == "GET" || info._method == "HEAD")
+        {
+          info._err_code = "304";
+        }
+        else 
+        {
+          info._err_code = "412";
+        }
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  //服务器的这个文件修改了
+  bool FileIfUnModefiedSince(RequestInfo& info)
+  {
+    auto it = info._hdr_list.find("If-UnModefied-Since");
+    if (it != info._hdr_list.end() && (Utils::GmtToTime(it->second) <= Utils::GmtToTime(_mtime)))
+    {
+      info._err_code = "412";
+      return false;
+    }
+
+    return true;
+  }
+
+  bool FileIfRange(RequestInfo& info)
+  {
+    auto it = info._hdr_list.find("If-Range");
+    if ((it != info._hdr_list.end() && it->second != _mtime))
+    {
+      info._err_code = "412";
+      return false;
+    }
+
+    return true;
+  }
+
+  bool FileRange(RequestInfo& info)
+  {
+    auto it = info._hdr_list.find("Range");
+    if (it == info._hdr_list.end())
+    {
+      //如果没有找到Range字段，则认为发送范围从文件qi起始-结束
+      _is_range = false;
+      _range_list[0] = Utils::StrToDigit(_fsize) - 1;
+      return true;
+    }
+    //找到Range字段
+    _is_range = true;
+    std::string full_range = it->second;
+    size_t pos = full_range.find("=");
+    if (pos == std::string::npos)
+    {
+      info._err_code = "416";
+      return false;
+    }
+    std::string unit = full_range.substr(0, pos);
+    std::string range = full_range.substr(pos + 1);
+    
+    //注意：Range中可能有多个范围以,间隔，则需要取出多个范围分别进行传输
+    std::vector<std::string> range_list;
+    int range_num = Utils::Split(range, ",", range_list);
+    for (int i = 0; i < range_num; i++)
+    {
+      if (range_list[i].length() == 1)
+      {
+        info._err_code = "416";
+        return false;
+      }
+      pos = range_list[i].find("-");
+      if (pos == std::string::npos)
+      {
+        info._err_code = "416";
+        return false;
+      }
+      int64_t s = 0, e = 0, t = 0;
+      int64_t fend = Utils::StrToDigit(_fsize) - 1;
+      if (pos == 0)
+      {
+        //Range:bytes=-500最后500个字节
+        t = Utils::StrToDigit(range_list[i].substr(pos + 1));
+        e = fend;
+        s = e - t + 1;
+      }
+      else if (pos == (range_list[i].length() - 1)) 
+      {
+        //std::cout<<"range: bytes start-\n"; 指定位置到结束
+        s = Utils::StrToDigit(range_list[i].substr(0, pos));
+        e = fend;
+      }
+      else 
+      {
+        //std::cout<<"range: bytes=start-end\n"; 指定起始-结束位置
+        s = Utils::StrToDigit(range_list[i].substr(0, pos));
+        e = Utils::StrToDigit(range_list[i].substr(pos + 1));
+      }
+      if (s < 0 || s > fend || e > fend || s > e) {
+        info._err_code = "416";
+        return false;
+      }
+      _range_list[s] = e;
+    }
+
+    return true;
+  }
 
   //文件下载功能
   bool ProcessFile(RequestInfo& info)
   {
-    std::cout << "In ProcessFile" << std::endl;
     std::string rsp_header;
-    rsp_header = info._version + " 200 OK\r\n";
-    rsp_header += "Content-Type: " + _mime + "\r\n";
-    //?????????????????????????
-    rsp_header += "Connection: close\r\n";
-    rsp_header += "Content-Length: " + _fsize + "\r\n";
-    //????????????????????????
-    rsp_header += "ETag: " + _etag + "\r\n";
-    rsp_header += "Last-Modified: " + _mtime + "\r\n";
-    rsp_header += "Date: " + _date + "\r\n\r\n";
-    SendData(rsp_header);
+    for (auto it = _range_list.begin(); it != _range_list.end(); it++)
+    {
+      std::string s_pos;
 
-    int fd = open(info._path_phys.c_str(), O_RDONLY);
-    if (fd < 0)
-    {
-      info._err_code = "400";
-      ErrHandler(info);
-      return false;
+      std::string e_pos;
+      std::string content_len;
+      int64_t spos = it->first;
+      int64_t epos = it->second;
+      int64_t clen = it->second - it->first + 1;
+      Utils::DigitToStr(spos, s_pos);
+      Utils::DigitToStr(epos, e_pos);
+      Utils::DigitToStr(clen, content_len);
+      if (_is_range)
+      {
+        rsp_header = info._version + " 206 " + g_err_desc["206"] +"\r\n"; 
+        rsp_header += "Content-Range: bytes " + s_pos + "-" + e_pos + "/" + _fsize + "\r\n";
+      }
+      else 
+      {
+        rsp_header = info._version + " 200 " + g_err_desc["200"] +"\r\n"; 
+      }
+      rsp_header += "Content-Type: " + _mime + "\r\n";
+      rsp_header += "Connection: close\r\n";
+      rsp_header += "Content-Length: " + _fsize + "\r\n";
+      rsp_header += "ETag: " + _etag + "\r\n";
+      rsp_header += "Last-Modified: " + _mtime + "\r\n";
+      rsp_header += "Date: " + _date + "\r\n";
+      rsp_header += "Accept-Ranges: ";//告诉浏览器支持断点续传的功能
+      rsp_header += "bytes";//告诉浏览器支持断点续传的功能
+      rsp_header += "\r\n\r\n";
+      SendData(rsp_header);
+
+      int fd = open(info._path_phys.c_str(), O_RDONLY);
+      if (fd < 0)
+      {
+        info._err_code = "400";
+        ErrHandler(info);
+        return false;
+      }
+  
+      lseek(fd, spos, SEEK_SET);
+      int slen = 0, ret, rlen;
+      char buf[MAX_BUFF];
+      while (slen < clen)
+      {
+        rlen = (clen - slen) > MAX_HTTPHDR ? MAX_HTTPHDR : (clen - slen);
+        if ((ret = read(fd, buf, rlen) < 0))
+        {
+          if (errno == EINTR || errno == EAGAIN)
+          {
+            continue;
+          }
+          return false;
+        }
+        SendData(buf);
+        slen += ret;
+      }
+        
     }
-    int rlen = 0;
-    char tmp[MAX_BUFF];
-    //??????????
-    while ((rlen = read(fd, tmp, MAX_BUFF)) > 0)
-    {
-      //使用这样子发送的话就会导致，服务器挂掉
-      //不能这样子发送，如果这样子发送的话，就是将数据转化为string类型的了
-      //如果文本中存在\0的话，就会导致每次发送的数据没有发送完毕
-      //有这样的一种情况，文本中的数据都是\0那么就会在第一次发送过去的时候，发送0个数据
-      //tmp[rlen + 1] = '\0';
-      //SendData(tmp);
-      //发送文件数据的时候不能用string发送
-      //对端关闭连接，发送数据send就会收到SIGPIPE信号，默认处理就是终止进程
-      send(_cli_sock, tmp, rlen, 0);
-    }
-    close(fd);
     return true;
   }
 
@@ -821,6 +1021,11 @@ public:
   {
     //初始化文件响应信息
     InitResponse(info);
+    FileIfModefiedSince(info);
+    FileIfUnModefiedSince(info);
+    FileIfMatch(info);
+    FileIfNoneMatch(info);
+    FileRange(info);
     //执行文件列表展示响应
     if (FileIsDir(info))
     {
