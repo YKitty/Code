@@ -22,7 +22,7 @@ public:
 
 int main()
 {
-  //在调用new[]的时候会多开辟4字节来存储，开辟对象的个数
+  //在调用new[]的时候会多开辟4字节来存储开辟对象的个数
   //operator new[]() -> malloc() -> constructor -> ptr
   A* a = new A[10]; 
 
