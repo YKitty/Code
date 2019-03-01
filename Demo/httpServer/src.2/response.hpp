@@ -202,10 +202,8 @@ public:
     std::string rsp_header;
     rsp_header = info._version + " 200 OK\r\n";
     rsp_header += "Content-Type: " + _mime + "\r\n";
-    //?????????????????????????
     rsp_header += "Connection: close\r\n";
     rsp_header += "Content-Length: " + _fsize + "\r\n";
-    //????????????????????????
     rsp_header += "ETag: " + _etag + "\r\n";
     rsp_header += "Last-Modified: " + _mtime + "\r\n";
     rsp_header += "Date: " + _date + "\r\n";
@@ -223,7 +221,6 @@ public:
     }
     int rlen = 0;
     char tmp[MAX_BUFF];
-    //??????????
     while ((rlen = read(fd, tmp, MAX_BUFF)) > 0)
     {
       //使用这样子发送的话就会导致，服务器挂掉
@@ -254,16 +251,13 @@ public:
     //每一个目录下的文件都要输出一个html标签信息
     std::string rsp_header;
     rsp_header = info._version + " 200 OK\r\n";
-    //????????????????
     rsp_header += "Connection: close\r\n";
     if (info._version == "HTTP/1.1")
     {
       //只有HTTP版本是1.1的时候才可以使用Transfer-Encoding：chunked进行传输
       rsp_header += "Transfer-Encoding: chunked\r\n";
     }
-    //?????????????? 
     rsp_header += "ETag: " + _etag + "\r\n";
-    //?????????????????
     rsp_header += "Last-Modified: " + _mtime + "\r\n";
     rsp_header += "Date: " + _date + "\r\n\r\n";
     SendData(rsp_header);
@@ -526,6 +520,7 @@ public:
   {
     if (info._st.st_mode & S_IFDIR)
     {
+      //判断是一个目录之后，必须看其最后的路径有没有加上/
       //std::string path = info._path_info;
       //if (path[path.length() - 1] != '/')
       if (info._path_info.back() != '/')
