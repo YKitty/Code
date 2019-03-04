@@ -40,6 +40,9 @@ std::unordered_map<std::string, std::string> g_mime_type = {
   {"zip", "application/zip"},
   {"mp3", "audio/mpeg"},
   {"mpeg", "video/mpeg"},
+  {"mp4", "video/mpeg4"},
+  {"png", "application/x-png"},
+  {"apk", "application/vnd.android.package-archive"},
   {"unknow", "application/octet-steam"},
 };
 
