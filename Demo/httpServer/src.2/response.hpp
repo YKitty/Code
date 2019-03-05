@@ -268,6 +268,8 @@ public:
     //rsp_body += "<title>YKittyServer" + info._path_info + "</title>";
     rsp_body += "<title>YKitty";
     rsp_body += "</title>";
+    rsp_body += "<style>body{background:url(./rb1.jpg) center 0 repeat-y;background-size: 100%;}";
+    rsp_body += "</style>";
     //meta就是对于一个html页面中的元信息
     rsp_body += "<meta charset='UTF-8'>";
     rsp_body += "</head><body>";

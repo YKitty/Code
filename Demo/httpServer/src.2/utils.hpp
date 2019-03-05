@@ -36,6 +36,7 @@ std::unordered_map<std::string, std::string> g_mime_type = {
   {"html", "text/html"},
   {"htm", "text/html"},
   {"jpg", "image/jpeg"},
+  {"jpeg", "image/jpeg"},
   {"gif", "image/gif"},
   {"zip", "application/zip"},
   {"mp3", "audio/mpeg"},
