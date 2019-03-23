@@ -116,7 +116,7 @@ void Handler(int epfd, int num, struct epoll_event evs[], int listen_sock)
     else if (events & EPOLLOUT)
     {
       //写就绪之后，向对端写数据
-      std::string response = "HTTP/1.1 200 OK\r\n\r\n<html><h1>Hello Epoll Server!</h1></html>";
+      std::string response = "HTTP/1.1 301 REDIRECT\r\nLocation:https://www.taobao.com\r\n";
       send(sock, response.c_str(), response.size(), 0);
       close(sock);
       DelFdFromEpoll(epfd, sock);
