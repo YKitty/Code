@@ -1,0 +1,59 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+Accept	TcpServer.hpp	/^  bool Accept(int* new_sock)$/;"	f	class:Sock
+AddTask	ThreadPool.hpp	/^  void AddTask(Task& task_)$/;"	f	class:Pool
+Bind	TcpServer.hpp	/^  void Bind()$/;"	f	class:Sock
+GetSock	TcpServer.hpp	/^  int GetSock()$/;"	f	class:Sock
+GetTask	ThreadPool.hpp	/^  Task GetTask()$/;"	f	class:Pool
+Handler	ThreadPool.hpp	/^typedef void (*Handler) (int);$/;"	t
+IdleThread	ThreadPool.hpp	/^  void IdleThread()$/;"	f	class:Pool
+InitDict	TcpServer.cc	/^void InitDict()$/;"	f
+InitPool	ThreadPool.hpp	/^  void InitPool()$/;"	f	class:Pool
+InitServer	TcpServer.hpp	/^  void InitServer()$/;"	f	class:TcpServer
+IsEmpty	ThreadPool.hpp	/^  bool IsEmpty()$/;"	f	class:Pool
+Listen	TcpServer.hpp	/^  void Listen()$/;"	f	class:Sock
+LockQueue	ThreadPool.hpp	/^  void LockQueue()$/;"	f	class:Pool
+NoticeAllThread	ThreadPool.hpp	/^  void NoticeAllThread()$/;"	f	class:Pool
+NoticeOneThread	ThreadPool.hpp	/^  void NoticeOneThread()$/;"	f	class:Pool
+Pool	ThreadPool.hpp	/^  Pool(int thread_nums_)$/;"	f	class:Pool
+Pool	ThreadPool.hpp	/^class Pool$/;"	c
+Recv	TcpServer.hpp	/^  bool Recv(std::string& str_)$/;"	f	class:Sock
+Send	TcpServer.hpp	/^  void Send(std::string& str_)$/;"	f	class:Sock
+Service	TcpServer.hpp	/^  static void Service(int sock)$/;"	f	class:TcpServer
+Sock	TcpServer.hpp	/^  Sock()$/;"	f	class:Sock
+Sock	TcpServer.hpp	/^  Sock(const std::string& ip_, const int& port_)$/;"	f	class:Sock
+Sock	TcpServer.hpp	/^class Sock $/;"	c
+Socket	TcpServer.hpp	/^  void Socket()$/;"	f	class:Sock
+Start	TcpServer.hpp	/^  void Start()$/;"	f	class:TcpServer
+Task	ThreadPool.hpp	/^  Task(int sock_, Handler handler_)$/;"	f	class:Task
+Task	ThreadPool.hpp	/^class Task $/;"	c
+TcpServer	TcpServer.hpp	/^  TcpServer(std::string ip_, int port_)$/;"	f	class:TcpServer
+TcpServer	TcpServer.hpp	/^class TcpServer $/;"	c
+ThreadRoutine	ThreadPool.hpp	/^  static void* ThreadRoutine(void* arg)$/;"	f	class:Pool
+Translate	TcpServer.cc	/^void Translate(const std::string& req, std::string* resp)$/;"	f
+UnlockQueue	ThreadPool.hpp	/^  void UnlockQueue()$/;"	f	class:Pool
+Usage	TcpClient.cc	/^void Usage(std::string proc_)$/;"	f
+Usage	TcpServer.cc	/^void Usage(std::string proc_)$/;"	f
+cc	Makefile	/^cc = g++$/;"	m
+cond	ThreadPool.hpp	/^  pthread_cond_t cond;$/;"	m	class:Pool
+g_dict	TcpServer.cc	/^std::unordered_map<std::string, std::string> g_dict;$/;"	v
+handler	ThreadPool.hpp	/^  Handler handler;$/;"	m	class:Task
+ip	TcpServer.hpp	/^  std::string ip;$/;"	m	class:Sock
+lock	ThreadPool.hpp	/^  pthread_mutex_t lock;$/;"	m	class:Pool
+main	TcpClient.cc	/^int main(int argc, char* argv[])$/;"	f
+main	TcpServer.cc	/^int main(int argc, char* argv[])$/;"	f
+port	TcpServer.hpp	/^  int port;$/;"	m	class:Sock
+run	ThreadPool.hpp	/^  void run()$/;"	f	class:Task
+sock	TcpServer.hpp	/^  Sock sock;$/;"	m	class:TcpServer
+sock	TcpServer.hpp	/^  int sock;$/;"	m	class:Sock
+sock	ThreadPool.hpp	/^  int sock;$/;"	m	class:Task
+task_queue	ThreadPool.hpp	/^  std::queue<Task> task_queue;$/;"	m	class:Pool
+thread_nums	ThreadPool.hpp	/^  int thread_nums;$/;"	m	class:Pool
+~Pool	ThreadPool.hpp	/^  ~Pool()$/;"	f	class:Pool
+~Sock	TcpServer.hpp	/^  ~Sock()$/;"	f	class:Sock
+~Task	ThreadPool.hpp	/^  ~Task()$/;"	f	class:Task
+~TcpServer	TcpServer.hpp	/^  ~TcpServer()$/;"	f	class:TcpServer

@@ -1,0 +1,31 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+AVLTree	AVLTree.hpp	/^  AVLTree():_root(nullptr)$/;"	f	class:AVLTree
+AVLTree	AVLTree.hpp	/^class AVLTree $/;"	c
+AVLTreeNode	AVLTree.hpp	/^  AVLTreeNode(const K& k, const V& v):_key(k),_value(v),_bf(0),_left(nullptr),_right(nullptr),_parent(nullptr)$/;"	f	struct:AVLTreeNode
+AVLTreeNode	AVLTree.hpp	/^struct AVLTreeNode $/;"	s
+Height	AVLTree.hpp	/^  int Height(Node* root)$/;"	f	class:AVLTree
+InOrder	AVLTree.hpp	/^  void InOrder()$/;"	f	class:AVLTree
+InOrderSubFunction	AVLTree.hpp	/^  void InOrderSubFunction(Node* root)$/;"	f	class:AVLTree
+Insert	AVLTree.hpp	/^  bool Insert(const K& k, const V& v)$/;"	f	class:AVLTree
+IsBalance	AVLTree.hpp	/^  bool IsBalance()$/;"	f	class:AVLTree
+IsBalanceSubFunction	AVLTree.hpp	/^  bool IsBalanceSubFunction(Node* root)$/;"	f	class:AVLTree
+LeftRightRotate	AVLTree.hpp	/^  void LeftRightRotate(Node* parent)$/;"	f	class:AVLTree
+LeftRotate	AVLTree.hpp	/^  void LeftRotate(Node* parent)$/;"	f	class:AVLTree
+Node	AVLTree.hpp	/^  typedef struct AVLTreeNode<K, V> Node;$/;"	t	class:AVLTree	typeref:struct:AVLTree::AVLTreeNode
+RightLeftRotate	AVLTree.hpp	/^  void RightLeftRotate(Node* parent)$/;"	f	class:AVLTree
+RightRotate	AVLTree.hpp	/^  void RightRotate(Node* parent)$/;"	f	class:AVLTree
+TestAVLTreeInsert	main.cc	/^void TestAVLTreeInsert()$/;"	f
+_bf	AVLTree.hpp	/^  int _bf;\/\/平衡因子$/;"	m	struct:AVLTreeNode
+_key	AVLTree.hpp	/^  K _key;$/;"	m	struct:AVLTreeNode
+_left	AVLTree.hpp	/^  struct AVLTreeNode<K, V>* _left;$/;"	m	struct:AVLTreeNode	typeref:struct:AVLTreeNode::AVLTreeNode
+_parent	AVLTree.hpp	/^  struct AVLTreeNode<K, V>* _parent;$/;"	m	struct:AVLTreeNode	typeref:struct:AVLTreeNode::AVLTreeNode
+_right	AVLTree.hpp	/^  struct AVLTreeNode<K, V>* _right;$/;"	m	struct:AVLTreeNode	typeref:struct:AVLTreeNode::AVLTreeNode
+_root	AVLTree.hpp	/^  Node* _root;$/;"	m	class:AVLTree
+_value	AVLTree.hpp	/^  V _value;$/;"	m	struct:AVLTreeNode
+main	main.cc	/^int main()$/;"	f
+~AVLTree	AVLTree.hpp	/^  ~AVLTree()$/;"	f	class:AVLTree
