@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iostream>
+#include <assert.h>
+
 template<class K, class V>
 struct AVLTreeNode 
 {
@@ -25,6 +28,89 @@ public:
 
   ~AVLTree()
   {}
+
+  void LeftRotate(Node* parent)
+  {
+    Node* subtree_right = parent->_right;
+    Node* subtree_right_left = subtree_right->_left;
+
+    parent->_right = subtree_right_left;
+    if (subtree_right_left)
+    {
+      subtree_right_left->_parent = parent;
+    }
+
+    subtree_right->_left = parent;
+    //记录下改变结点的前一个节点
+    Node* pparent = parent->_parent;
+    parent->_parent = subtree_right;
+    
+    if (pparent == _root)
+    {
+      _root = subtree_right;
+    }
+    else 
+    {
+      if (pparent->_left == parent)
+      {
+        pparent->_left = subtree_right;
+      }
+      else 
+      {
+        pparent->_right = subtree_right;
+      }
+    }
+    subtree_right->_parent = pparent;
+
+    subtree_right->_bf = parent->_bf = 0;
+  }
+
+  void RightRotate(Node* parent)
+  {
+    Node* subtree_left = parent->_left;
+    Node* subtree_left_right = subtree_left;
+
+    parent->_left = subtree_left_right;
+    if (subtree_left_right)
+    {
+      subtree_left_right = parent;
+    }
+
+    subtree_left->_right = parent;
+    Node* pparent = parent->_parent;
+    parent->_parent = subtree_left;
+
+    if (parent == _root)
+    {
+      _root = subtree_left;
+    }
+    else 
+    {
+      if (pparent->_left == parent)
+      {
+        pparent->_left = subtree_left;
+      }
+      else 
+      {
+        pparent->_right = subtree_left;
+      }
+    }
+    subtree_left->_parent = pparent;
+
+    subtree_left->_bf = parent->_bf = 0;
+  }
+
+  void LeftRightRotate(Node* parent)
+  {
+    LeftRotate(parent->_left);
+    RightRotate(parent);
+  }
+
+  void RightLeftRotate(Node* parent)
+  {
+    RightRotate(parent->_right);
+    LeftRotate(parent);
+  }
 
   bool Insert(const K& k, const V& v)
   {
@@ -93,11 +179,26 @@ public:
 
       if (parent->_bf == 0)
       {
+        //高度没有改变，不需要调整
         break;
       }
       else if (abs(parent->_bf) == 1)
       {
+        //高度改变，一直向上调整
+        insert_node = parent;
+        parent = parent->_parent;
+      }
+      else if (abs(parent->_bf) == 2)
+      {
+        //需要进行旋转
+        //四种类型的旋转
         
+        break;//更新结束直接不再更新
+      }
+      else 
+      {
+        //出现异常错误
+        assert(false);
       }
     }
 
