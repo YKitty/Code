@@ -14,6 +14,7 @@ struct  RBTreeNode
   struct RBTreeNode<K, V>* _left;
   struct RBTreeNode<K, V>* _right;
   struct RBTreeNode<K, V>* _parent;
+  enum color _color;
 
   K _key;
   V _value;
@@ -71,6 +72,21 @@ public:
       parent->_right = insert_node;
       insert_node->_parent = parent;
     }
+
+    while (insert_node == parent->_left && parent->_color == RED)
+    {
+      Node* grandfather = parent->_parent;
+      if (parent == grandfather->_left)
+      {}
+      else //parent == grandfather->_right 
+      {
+        if (insert_node == parent->_left)
+        {}
+
+      }
+    }
+
+    _root->_color = BLACK;
   }
 private:
   Node* _root;
