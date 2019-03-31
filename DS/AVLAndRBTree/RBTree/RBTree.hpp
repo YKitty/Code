@@ -4,239 +4,244 @@
 
 using std::swap;
 
-enum color 
+enum color
 {
-    RED,
-    BLACK
+	RED,
+	BLACK
 };
 
 template<class K, class V>
-struct  RBTreeNode 
+struct  RBTreeNode
 {
-    struct RBTreeNode<K, V>* _left;
-    struct RBTreeNode<K, V>* _right;
-    struct RBTreeNode<K, V>* _parent;
-    enum color _color;
+	struct RBTreeNode<K, V>* _left;
+	struct RBTreeNode<K, V>* _right;
+	struct RBTreeNode<K, V>* _parent;
+	enum color _color;
 
-    K _key;
-    V _val;
-    RBTreeNode(int key, int val):_left(nullptr),_right(nullptr),_parent(nullptr),_color(RED),_key(key),_val(val)
-    {
-    }
+	K _key;
+	V _val;
+	RBTreeNode(int key, int val) :_left(nullptr), _right(nullptr), _parent(nullptr), _color(RED), _key(key), _val(val)
+	{
+	}
 };
 
 template<class K, class V>
-class RBTree 
+class RBTree
 {
-    public:
-        typedef struct RBTreeNode<K, V> Node;
-        RBTree():_root(nullptr)
-    {}
+public:
+	typedef struct RBTreeNode<K, V> Node;
+	RBTree() :_root(nullptr)
+	{}
 
-        ~RBTree()
-        {}
+	~RBTree()
+	{}
 
-        void LeftRotate(Node* parent)
-        {
-            Node* subtree_right = parent->_right;
-            Node* subtree_right_left = subtree_right->_left;
+	void LeftRotate(Node* parent)
+	{
+		Node* subtree_right = parent->_right;
+		Node* subtree_right_left = subtree_right->_left;
 
-            parent->_right = subtree_right_left;
-            if (subtree_right_left)
-            {
-                subtree_right_left->_parent = parent;
-            }
+		parent->_right = subtree_right_left;
+		if (subtree_right_left)
+		{
+			subtree_right_left->_parent = parent;
+		}
 
-            subtree_right->_left = parent;
-            Node* pparent = parent->_parent;
-            parent->_parent = subtree_right;
+		subtree_right->_left = parent;
+		Node* pparent = parent->_parent;
+		parent->_parent = subtree_right;
 
-            subtree_right->_parent = pparent;
-            if (parent == _root)
-            {
-                _root = subtree_right;
-            }
-            else 
-            {
-                if (pparent->_left == parent)
-                {
-                    pparent->_left = subtree_right;
-                }
-                else 
-                {
-                    pparent->_right = subtree_right;
-                }
-            }
-        }
+		subtree_right->_parent = pparent;
+		if (parent == _root)
+		{
+			_root = subtree_right;
+		}
+		else
+		{
+			if (pparent->_left == parent)
+			{
+				pparent->_left = subtree_right;
+			}
+			else
+			{
+				pparent->_right = subtree_right;
+			}
+		}
+	}
 
-        void RightRotate(Node* parent)
-        {
-            Node* subtree_left = parent->_left;
-            Node* subtree_left_right = subtree_left->_right;
+	void RightRotate(Node* parent)
+	{
+		Node* subtree_left = parent->_left;
+		Node* subtree_left_right = subtree_left->_right;
 
-            parent->_left = subtree_left_right;
-            if (subtree_left_right)
-            {
-                subtree_left_right->_parent = parent;
-            }
+		parent->_left = subtree_left_right;
+		if (subtree_left_right)
+		{
+			subtree_left_right->_parent = parent;
+		}
 
-            subtree_left->_right = parent;
-            Node* pparent = parent->_parent;
-            parent->_parent = subtree_left;
+		subtree_left->_right = parent;
+		Node* pparent = parent->_parent;
+		parent->_parent = subtree_left;
 
-            subtree_left->_parent = pparent;
-            if (parent == _root)
-            {
-                _root = subtree_left;
-            }
-            else 
-            {
-                if (subtree_left == pparent->_left)
-                {
-                    pparent->_left = subtree_left;
-                }
-                else 
-                {
-                    pparent->_right = subtree_left;
-                }
-            }
-        }
+		subtree_left->_parent = pparent;
+		if (parent == _root)
+		{
+			_root = subtree_left;
+		}
+		else
+		{
+			if (subtree_left == pparent->_left)
+			{
+				pparent->_left = subtree_left;
+			}
+			else
+			{
+				pparent->_right = subtree_left;
+			}
+		}
+	}
 
-        bool Insert(K key, V value)
-        {
-            //æŒ‰ç…§æœç´¢æ ‘çš„è§„åˆ™è¿›è¡Œæ’å…¥   
-            if (_root == nullptr) 
-            {
-                Node* tmp = new Node(key, value);
-                _root = tmp;
-                return true;
-            }
+	bool Insert(K key, V value)
+	{
+		//°´ÕÕËÑË÷Ê÷µÄ¹æÔò½øÐÐ²åÈë   
+		if (_root == nullptr)
+		{
+			Node* tmp = new Node(key, value);
+			_root = tmp;
+			return true;
+		}
 
-            Node* parent = nullptr;
-            Node* cur = _root;
-            Node* insert_node = new Node(key, value);
-            while (cur)
-            {
-                if (cur->_key == key)
-                {
-                    return true;
-                }
-                else if (cur->_key > key)
-                {
-                    parent = cur;
-                    cur = cur->_left;
-                }
-                else 
-                {
-                    parent = cur;
-                    cur = cur->_right;
-                }
-            }
+		Node* parent = nullptr;
+		Node* cur = _root;
+		Node* insert_node = new Node(key, value);
+		while (cur)
+		{
+			if (cur->_key == key)
+			{
+				return true;
+			}
+			else if (cur->_key > key)
+			{
+				parent = cur;
+				cur = cur->_left;
+			}
+			else
+			{
+				parent = cur;
+				cur = cur->_right;
+			}
+		}
 
-            if (parent->_key > key)
-            {
-                parent->_left = insert_node;
-                insert_node->_parent = parent;
-            }
-            else 
-            {
-                parent->_right = insert_node;
-                insert_node->_parent = parent;
-            }
-            insert_node->_parent = parent;
+		if (parent->_key > key)
+		{
+			parent->_left = insert_node;
+			insert_node->_parent = parent;
+		}
+		else
+		{
+			parent->_right = insert_node;
+			insert_node->_parent = parent;
+		}
 
-            //å·²ç»å°†ç»“ç‚¹æ’å…¥åˆ°äºŒå‰æœç´¢æ ‘äº†ï¼Œç„¶åŽè¿›è¡Œåˆ¤æ–­è°ƒæ•´
+		//ÒÑ¾­½«½áµã²åÈëµ½¶þ²æËÑË÷Ê÷ÁË£¬È»ºó½øÐÐÅÐ¶Ïµ÷Õû
 
-            //å½“çˆ¶äº²ç»“ç‚¹å­˜åœ¨ï¼Œå¹¶ä¸”ä¸ºçº¢è‰²çš„æ—¶å€™è¿›è¡Œè°ƒæ•´
-            while (parent && parent->_color == RED)
-            {
-                Node* grandfather = parent->_parent;
+		//µ±¸¸Ç×½áµã´æÔÚ£¬²¢ÇÒÎªºìÉ«µÄÊ±ºò½øÐÐµ÷Õû
+		while (parent && parent->_color == RED)
+		{
+			Node* grandfather = parent->_parent;
 
+			if (grandfather)
+			{
+				if (parent == grandfather->_left)//¸¸Ç×½áµãÊÇÒ¯Ò¯½áµãµÄ×ó×ÓÊ÷
+				{
+					Node* uncle = grandfather->_right;
+					if (uncle && uncle->_color == RED)
+					{
+						//½«¸¸Ç×½áµãºÍÊåÊå½áµã±äÎªºÚÉ«£¬Ò¯Ò¯½áµã±äÎªºìÉ«£¬¼ÌÐøÏòÉÏµ÷Õû
+						parent->_color = BLACK;
+						uncle->_color = BLACK;
+						grandfather->_color = RED;
+						insert_node = grandfather;
+						parent = insert_node->_parent;
+					}
+					else
+					{
+						//ÓÐ×ÅÁ½ÖÖÇé¿ö£¬µ«ÊÇÁ½ÖÖÇé¿ö¶¼Òª½øÐÐÓÒÐý
+						//¿ÉÒÔ½«ÓÒÐý½øÐÐºÏ²¢£¬Ê×ÏÈÅÐ¶ÏÊÇ·ñÐèÒª×óÐý   
+						if (parent->_right == insert_node)
+						{
+							//×óÐý
+							//×¢Òâ£º¾ÍÊÇ×óÐýÖ®ºó£¬insert_nodeºÍparent½áµãÎªÎ»ÖÃ·¢Éú¸Ä±ä£¬ËùÒÔÐèÒª½«Á½¸ö½ÚµãµÄÖ¸Õë½øÐÐ½»»»
+							LeftRotate(parent);
+							std::swap(insert_node, parent);
+						}
+						//½øÐÐÓÒÐý£¬ÒÔÒ¯Ò¯½áµãÎªÖ§µã½øÐÐÓÒÐý            
+						parent->_color = BLACK;
+						grandfather->_color = RED;
+						RightRotate(grandfather);
 
-                if (parent == grandfather->_left)//çˆ¶äº²ç»“ç‚¹æ˜¯çˆ·çˆ·ç»“ç‚¹çš„å·¦å­æ ‘
-                {
-                    Node* uncle = grandfather->_right;
-                    if (uncle && uncle->_color == RED)
-                    {
-                        //å°†çˆ¶äº²ç»“ç‚¹å’Œå”å”ç»“ç‚¹å˜ä¸ºé»‘è‰²ï¼Œçˆ·çˆ·ç»“ç‚¹å˜ä¸ºçº¢è‰²ï¼Œç»§ç»­å‘ä¸Šè°ƒæ•´
-                        parent->_color = BLACK;
-                        uncle->_color = BLACK;
-                        grandfather->_color = RED;
-                        insert_node = grandfather;
-                        parent = insert_node->_parent;
-                    }
-                    else 
-                    {
-                        //æœ‰ç€ä¸¤ç§æƒ…å†µï¼Œä½†æ˜¯ä¸¤ç§æƒ…å†µéƒ½è¦è¿›è¡Œå³æ—‹
-                        //å¯ä»¥å°†å³æ—‹è¿›è¡Œåˆå¹¶ï¼Œé¦–å…ˆåˆ¤æ–­æ˜¯å¦éœ€è¦å·¦æ—‹   
-                        if (parent->_right == insert_node)
-                        {
-                            //å·¦æ—‹
-                            //æ³¨æ„ï¼šå°±æ˜¯å·¦æ—‹ä¹‹åŽï¼Œinsert_nodeå’Œparentç»“ç‚¹ä¸ºä½ç½®å‘ç”Ÿæ”¹å˜ï¼Œæ‰€ä»¥éœ€è¦å°†ä¸¤ä¸ªèŠ‚ç‚¹çš„æŒ‡é’ˆè¿›è¡Œäº¤æ¢
-                            LeftRotate(insert_node);
-                            std::swap(insert_node, parent);
-                        }
-                        //è¿›è¡Œå³æ—‹ï¼Œä»¥çˆ·çˆ·ç»“ç‚¹ä¸ºæ”¯ç‚¹è¿›è¡Œå³æ—‹            
-                        parent->_color = BLACK;
-                        grandfather->_color = RED;
-                        RightRotate(grandfather);
+						break;
+					}
+				}
+				else //parent == grandfather->_right 
+				{
+					Node* uncle = grandfather->_left;
+					if (uncle && uncle->_color == RED)
+					{
+						parent->_color = uncle->_color = BLACK;
+						grandfather->_color = RED;
+						insert_node = grandfather;
+						parent = insert_node->_parent;
+					}
+					else
+					{
+						//½øÐÐ×óÐýºÍÓÒÐý£¬¶¼Òª½øÐÐÓÒÐý
+						//×óÐý
+						if (insert_node == parent->_left)
+						{
+							RightRotate(parent);
+							swap(parent, insert_node);
+						}
 
-                        break;
-                    }
-                }
-                else //parent == grandfather->_right 
-                {
-                    Node* uncle = grandfather->_left;
-                    if (uncle && uncle->_color == RED)
-                    {
-                        parent->_color = uncle->_color = BLACK;
-                        grandfather->_color = RED;
-                        insert_node = grandfather;
-                        parent = insert_node->_parent;
-                    }
-                    else 
-                    {
-                        //è¿›è¡Œå·¦æ—‹å’Œå³æ—‹ï¼Œéƒ½è¦è¿›è¡Œå³æ—‹
-                        //å·¦æ—‹
-                        if (insert_node == parent->_right)
-                        {
-                            RightRotate(parent);
-                            swap(parent, insert_node);
-                        }
+						parent->_color = BLACK;
+						grandfather->_color = RED;
+						LeftRotate(grandfather);
+						break;
+					}
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
 
-                        parent->_color = BLACK;
-                        grandfather->_color = RED;
-                        RightRotate(grandfather);
-                        break;
-                    }
-                }
-            }
+		//Èç¹ûgrandfatherÊÇ¸ù½ÚµãµÄ»°£¬ÐèÒª½«ÆäÉèÖÃÎªºÚÉ«
+		_root->_color = BLACK;
+	}
 
-            //å¦‚æžœgrandfatheræ˜¯æ ¹èŠ‚ç‚¹çš„è¯ï¼Œéœ€è¦å°†å…¶è®¾ç½®ä¸ºé»‘è‰²
-            _root->_color = BLACK;
-        }
+	void InOrderSubFunction(Node* root)
+	{
+		if (root == nullptr)
+		{
+			return;
+		}
 
-        void InOrderSubFunction(Node* root)
-        {
-            if (root == nullptr)
-            {
-                return ;
-            }
+		InOrderSubFunction(root->_left);
+		std::cout << root->_key << " ";
+		InOrderSubFunction(root->_right);
+	}
 
-            InOrderSubFunction(root->_left);
-            std::cout << root->_key << " ";
-            InOrderSubFunction(root->_right);
-        }
-
-        void InOrder()
-        {
-            if (_root == nullptr)
-            {
-                return ;
-            }
-            InOrderSubFunction(_root);
-            std::cout << std::endl;
-        }
-    private:
-        Node* _root;
+	void InOrder()
+	{
+		if (_root == nullptr)
+		{
+			return;
+		}
+		InOrderSubFunction(_root);
+		std::cout << std::endl;
+	}
+private:
+	Node * _root;
 };
