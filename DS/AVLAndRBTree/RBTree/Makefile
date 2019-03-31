@@ -1,5 +1,5 @@
 RBTree:main.cc
-	g++ -o $@ $^ -std=c++11 -g
+	g++ -o $@ $^ -std=c++11 
 .PHONY:clean
 clean:
 	rm -f RBTree

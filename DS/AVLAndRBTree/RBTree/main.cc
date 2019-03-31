@@ -13,7 +13,7 @@ void TestRBTree()
 	std::cout << "In Insert End!" << std::endl;
 
 	rb.InOrder();
-	//std::cout << "RBTree is balance: 1(true) : 0(false)\n" << "value:" << rb.IsBalance() << std::endl;
+	std::cout << "RBTree is balance: 1(true) : 0(false)\n" << "value:" << rb.IsRBTree() << std::endl;
 }
 
 int main()

@@ -242,6 +242,62 @@ public:
 		InOrderSubFunction(_root);
 		std::cout << std::endl;
 	}
+
+    bool IsRBTreeSubFubction(Node* root, int count, const int& black_count)
+    {
+        if (root == nullptr)
+        {
+            if (count == black_count)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        if (root->_color == BLACK)
+        {
+            count++;
+        }
+
+        //还要进行判断是不是有两个连在一起的红结点   
+        Node* pparent = root->_parent;
+        if (pparent && root->_color == RED && pparent->_color == RED)
+        {
+            return false;
+        }
+        
+        return IsRBTreeSubFubction(root->_left, count, black_count) && IsRBTreeSubFubction(root->_right, count, black_count);
+    }
+
+    bool IsRBTree()
+    {
+        //如果root为空，就是红黑树
+        if (_root == nullptr)
+        {
+            return true;
+        }
+        
+        if (_root && _root->_color == RED)
+        {
+            return false;
+        }
+
+        //求出一个路径上的黑结点的值
+        int black_count = 0;
+        Node* cur = _root;
+        while (cur)
+        {
+            if (cur->_color == BLACK)
+            {
+                black_count++;
+            }
+            cur = cur->_left;
+        }
+
+        int count = 0;
+        return IsRBTreeSubFubction(_root, count, black_count);
+
+    }
 private:
 	Node * _root;
 };
