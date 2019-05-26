@@ -38,6 +38,8 @@ int Search(std::string sourceString, std::string searchString, int* next)
     int i = 0, j = 0;
     while (i < sourceLen && j < searchLen)
     {
+        // 当j==-1时，i也会++
+        // 这是因为，只有是i和第一个字符进行比较时，j才会等于-1，所以此时回到开始时，没有必要在和这个i进行比较了
         if (j == -1 || sourceString[i] == searchString[j])
         {
             i++;
