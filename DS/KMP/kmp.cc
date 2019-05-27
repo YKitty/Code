@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+/*
 void GetNext(std::string str, int* next)
 {
     if (str.size() == 0)
@@ -54,11 +56,70 @@ int Search(std::string sourceString, std::string searchString, int* next)
     else 
         return -1;
 }
+*/  
+
+void GetNext(const string& des, int* next)
+    {
+        //第一个位置为-1
+        next[0] = -1;
+        
+        int cur_index = 0;
+        int cal_index = -1;
+        
+        //每次计算的都是下一个数据元素
+        while (cur_index < des.size() - 1)
+        {
+            if (cal_index == -1 || des[cal_index] == des[cur_index])
+                next[++cur_index] = ++cal_index;
+                
+            else
+                cal_index = next[cal_index];
+        }
+    }
+    
+    int Search(string src, string des, int* next)
+    {
+        int i = 0;
+        int j = 0;
+        // 这里不能使用j < des.size() 两个类型不一样
+        while (i < src.size() && j < (int)des.size())
+        {
+            if (j == -1 || src[i] == des[j])
+            {
+                i++;
+                j++;
+            }
+            else
+                j = next[j];
+        }
+        
+        return j == des.size() ? i - j : -1;
+    }
+    
+    /* KMP算法 */
+    int MystrStr(string src, string des)
+    {
+        if (des.size() == 0)
+            return 0;
+        int* next = new int[des.size()];
+        GetNext(des, next);
+        
+        return Search(src, des, next);
+    }
 
 int main()
 {
-    std::string sourceString = "abcd";
-    std::string searchString = "cd";
+    string src = "hello";
+    string des = "ll";
+    MystrStr(src, des);
+	return 0;
+}   
+ 
+/*
+int main()
+{
+    std::string sourceString = "hello";
+    std::string searchString = "ll";
     int next[10] = { 0 };
     GetNext(searchString, next);
     int ret = Search(sourceString, searchString, next);
@@ -68,3 +129,4 @@ int main()
         std::cout << "Search fail" << std::endl;
     return 0;
 }
+*/ 
